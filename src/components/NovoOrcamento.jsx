@@ -536,11 +536,27 @@ export default function NovoOrcamento() {
                       <span className='text-gray-300'>-</span>
                     )}
                   </td>
-                  <td className='py-1 px-2 text-center font-medium'>
-                    R${' '}
-                    {item.precoUnitario.toLocaleString('pt-BR', {
-                      minimumFractionDigits: 2,
-                    })}
+                  <td className='py-1 px-2'>
+                    <div className='relative min-w-[100px]'>
+                      <span className='absolute inset-y-0 left-0 pl-2 flex items-center text-xs font-semibold text-custom-muted'>
+                        R$
+                      </span>
+                      <input
+                        type='number'
+                        step='0.01'
+                        min='0'
+                        placeholder='0.00'
+                        value={item.precoUnitario || ''}
+                        onChange={(e) =>
+                          handleItemChange(
+                            item.id,
+                            'precoUnitario',
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                        className='w-full pl-7 pr-1 py-1 border border-custom-grid rounded focus:outline-none text-sm font-medium text-center'
+                      />
+                    </div>
                   </td>
                   <td className='py-1 px-2 text-center font-bold text-custom-main'>
                     R${' '}
