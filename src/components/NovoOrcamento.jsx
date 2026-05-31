@@ -949,6 +949,29 @@ export default function NovoOrcamento() {
         </div>
       </div>
 
+      {/* BLOCO DE ASSINATURAS NO PDF */}
+      <div className='mt-8 grid grid-cols-2 gap-6 text-center print:grid print:grid-cols-2 print:gap-6'>
+        {/* Assinatura da Empresa */}
+        <div className='flex flex-col items-center justify-end h-16'>
+          <div className='w-full border-t border-black max-w-[280px]'></div>
+          <p className='text-[10px] font-bold uppercase tracking-wide mt-1 text-gray-700'>
+            {DADOS_EMPRESA.nome}
+          </p>
+          <p className='text-[9px] text-gray-500 font-normal'>Emitente</p>
+        </div>
+
+        {/* Assinatura do Cliente */}
+        <div className='flex flex-col items-center justify-end h-16'>
+          <div className='w-full border-t border-black max-w-[280px]'></div>
+          <p className='text-[10px] font-bold uppercase tracking-wide mt-1 text-gray-700 truncate max-w-[280px]'>
+            {clienteSelecionado
+              ? clienteSelecionado.nome
+              : 'Assinatura do Cliente'}
+          </p>
+          <p className='text-[9px] text-gray-500 font-normal'>Cliente</p>
+        </div>
+      </div>
+
       <Modal
         isOpen={modalLimparOpen}
         title='Apagar e Zerar Orçamento'
