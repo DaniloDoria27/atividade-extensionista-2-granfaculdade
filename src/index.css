@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Altere as cores do seu sistema aqui com facilidade */
+  --background: #f8fafc; /* Slate 50 - Fundo principal */
+  --surface: #ffffff; /* Branco - Fundo de cards/tabelas */
+  --text-main: #0f172a; /* Slate 900 - Texto principal */
+  --text-muted: #475569; /* Slate 600 - Textos secundários/labels */
+
+  --primary: #fa8327; /* Blue 600 - Cor principal de destaque (Botões, links ativos) */
+  --primary-hover: #d1620d; /* Blue 700 - Hover dos botões principais */
+
+  --secondary: #64748b; /* Slate 500 - Botões secundários/neutros */
+  --secondary-hover: #475569;
+
+  --success: #16a34a; /* Green 600 - Sucesso/Salvar */
+  --success-hover: #15803d;
+
+  --danger: #dc2626; /* Red 600 - Erro/Apagar/Limpar */
+  --danger-hover: #b91c1c;
+
+  --border: #e2e8f0; /* Slate 200 - Bordas de inputs e tabelas */
+
+  /* MUDANÇA 1: Aumenta a fonte base do HTML de 16px para 18px.
+     Isso escala proporcionalmente todos os textos que usam rem/em,
+     simulando o zoom de 125% do navegador nativamente. */
+  font-size: 18px;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-main);
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Classes utilitárias customizadas que mapeiam as variáveis */
+.bg-custom-surface {
+  background-color: var(--surface);
+}
+.text-custom-main {
+  color: var(--text-main);
+}
+.text-custom-muted {
+  color: var(--text-muted);
+}
+.border-custom-grid {
+  border-color: var(--border);
+}
+
+/* Ajuste sutil nos botões para acompanhar o ganho de escala visual */
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  @apply font-semibold py-2 px-4 rounded-md transition-colors inline-flex items-center justify-center;
+}
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: white;
+  @apply font-semibold py-2 px-4 rounded-md transition-colors inline-flex items-center justify-center;
+}
+.btn-secondary:hover {
+  background-color: var(--secondary-hover);
+}
+
+.btn-success {
+  background-color: var(--success);
+  color: white;
+  @apply font-semibold py-2 px-4 rounded-md transition-colors inline-flex items-center justify-center;
+}
+.btn-success:hover {
+  background-color: var(--success-hover);
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  color: white;
+  @apply font-semibold py-2 px-4 rounded-md transition-colors inline-flex items-center justify-center;
+}
+.btn-danger:hover {
+  background-color: var(--danger-hover);
+}
+
+/* Animação suave para abertura dos Modais de Exclusão/Aviso */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.15s ease-out forwards;
+}
+
+/* Regras para garantir folha limpa estilo Excel ao gerar o PDF */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+}
+
+html {
+  scrollbar-gutter: stable;
+}
