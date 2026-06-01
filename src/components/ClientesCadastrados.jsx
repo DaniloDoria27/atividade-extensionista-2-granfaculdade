@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Edit2, Trash2, Search, X } from 'lucide-react';
 import Modal from './Modal';
+import { createPortal } from 'react-dom';
 
 export default function ClientesCadastrados() {
   const [clientes, setClientes] = useState([]);
@@ -160,7 +161,7 @@ export default function ClientesCadastrados() {
       {/* TABELA DE LISTAGEM */}
       <div className='bg-custom-surface p-6 rounded-lg border border-custom-grid shadow-sm'>
         <h3 className='font-bold text-xl text-custom-main mb-4'>
-          Clientes Cadastrados
+          Clientes Atuais
         </h3>
         <div className='overflow-x-auto border border-custom-grid rounded-md shadow-sm bg-white'>
           <table className='w-full text-left border-collapse min-w-[800px]'>
@@ -340,166 +341,168 @@ export default function ClientesCadastrados() {
       )}
 
       {/* MODAL DE EDIÇÃO */}
-      {modalEditarOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm'>
-          <div className='bg-white rounded-lg shadow-xl border border-custom-grid max-w-4xl w-full overflow-hidden'>
-            <div className='bg-gray-50 px-6 py-4 border-b border-custom-grid flex justify-between items-center'>
-              <h3 className='text-lg font-bold text-custom-main'>
-                Editar Dados do Cliente
-              </h3>
-              <button
-                onClick={() => setModalEditarOpen(false)}
-                className='text-gray-400 hover:text-custom-main transition-colors'
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <form
-              onSubmit={handleSalvarEdicao}
-              className='p-6 grid grid-cols-1 md:grid-cols-12 gap-4 text-base'
-            >
-              <div className='md:col-span-6'>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  Nome / Razão Social *
-                </label>
-                <input
-                  type='text'
-                  value={editNome}
-                  onChange={(e) => setEditNome(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white capitalize focus:outline-none'
-                />
-              </div>
-              <div className='md:col-span-2'>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  Tipo Doc.
-                </label>
-                <select
-                  value={editTipoDoc}
-                  onChange={(e) => setEditTipoDoc(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
-                >
-                  <option value='CPF'>CPF</option>
-                  <option value='CNPJ'>CNPJ</option>
-                </select>
-              </div>
-              <div className='md:col-span-4'>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  Nº Documento
-                </label>
-                <input
-                  type='text'
-                  value={editDocumento}
-                  onChange={(e) => setEditDocumento(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
-                />
-              </div>
-              <div className='md:col-span-4'>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  Contato Principal *
-                </label>
-                <input
-                  type='text'
-                  value={editContato1}
-                  onChange={(e) => setEditContato1(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
-                />
-              </div>
-              <div className='md:col-span-4'>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  Contato 2
-                </label>
-                <input
-                  type='text'
-                  value={editContato2}
-                  onChange={(e) => setEditContato2(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
-                />
-              </div>
-              <div className='md:col-span-4'>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  E-mail
-                </label>
-                <input
-                  type='email'
-                  value={editEmail}
-                  onChange={(e) => setEditEmail(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white text-sm focus:outline-none'
-                />
-              </div>
-              <div className='md:col-span-5'>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  Rua / Logradouro
-                </label>
-                <input
-                  type='text'
-                  value={editLogradouro}
-                  onChange={(e) => setEditLogradouro(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white capitalize focus:outline-none'
-                />
-              </div>
-              <div className='md:col-span-2'>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  Número
-                </label>
-                <input
-                  type='text'
-                  value={editNumero}
-                  onChange={(e) => setEditNumero(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
-                />
-              </div>
-              <div className='md:col-span-5'>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  Complemento
-                </label>
-                <input
-                  type='text'
-                  value={editComplemento}
-                  onChange={(e) => setEditComplemento(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
-                />
-              </div>
-              <div className='md:col-span-6'>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  Bairro
-                </label>
-                <input
-                  type='text'
-                  value={editBairro}
-                  onChange={(e) => setEditBairro(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white capitalize focus:outline-none'
-                />
-              </div>
-              <div className='md:col-span-6'>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  CEP
-                </label>
-                <input
-                  type='text'
-                  value={editCep}
-                  onChange={(e) => setEditCep(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
-                />
-              </div>
-              <div className='md:col-span-12 flex justify-end gap-3 pt-4 border-t border-custom-grid mt-2'>
+      {modalEditarOpen &&
+        createPortal(
+          <div className='fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm'>
+            <div className='bg-white rounded-lg shadow-xl border border-custom-grid max-w-4xl w-full overflow-hidden'>
+              <div className='bg-gray-50 px-6 py-4 border-b border-custom-grid flex justify-between items-center'>
+                <h3 className='text-lg font-bold text-custom-main'>
+                  Editar Dados do Cliente
+                </h3>
                 <button
-                  type='button'
                   onClick={() => setModalEditarOpen(false)}
-                  className='px-4 py-2 border border-custom-grid text-custom-muted hover:bg-gray-50 rounded-md font-semibold'
+                  className='text-gray-400 hover:text-custom-main transition-colors'
                 >
-                  Cancelar
-                </button>
-                <button
-                  type='submit'
-                  className='btn-primary px-5 py-2 rounded-md font-semibold shadow-sm'
-                >
-                  Salvar Alterações
+                  <X size={20} />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+              <form
+                onSubmit={handleSalvarEdicao}
+                className='p-6 grid grid-cols-1 md:grid-cols-12 gap-4 text-base'
+              >
+                <div className='md:col-span-6'>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    Nome / Razão Social *
+                  </label>
+                  <input
+                    type='text'
+                    value={editNome}
+                    onChange={(e) => setEditNome(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white capitalize focus:outline-none'
+                  />
+                </div>
+                <div className='md:col-span-2'>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    Tipo Doc.
+                  </label>
+                  <select
+                    value={editTipoDoc}
+                    onChange={(e) => setEditTipoDoc(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
+                  >
+                    <option value='CPF'>CPF</option>
+                    <option value='CNPJ'>CNPJ</option>
+                  </select>
+                </div>
+                <div className='md:col-span-4'>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    Nº Documento
+                  </label>
+                  <input
+                    type='text'
+                    value={editDocumento}
+                    onChange={(e) => setEditDocumento(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
+                  />
+                </div>
+                <div className='md:col-span-4'>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    Contato Principal *
+                  </label>
+                  <input
+                    type='text'
+                    value={editContato1}
+                    onChange={(e) => setEditContato1(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
+                  />
+                </div>
+                <div className='md:col-span-4'>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    Contato 2
+                  </label>
+                  <input
+                    type='text'
+                    value={editContato2}
+                    onChange={(e) => setEditContato2(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
+                  />
+                </div>
+                <div className='md:col-span-4'>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    E-mail
+                  </label>
+                  <input
+                    type='email'
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white text-sm focus:outline-none'
+                  />
+                </div>
+                <div className='md:col-span-5'>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    Rua / Logradouro
+                  </label>
+                  <input
+                    type='text'
+                    value={editLogradouro}
+                    onChange={(e) => setEditLogradouro(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white capitalize focus:outline-none'
+                  />
+                </div>
+                <div className='md:col-span-2'>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    Número
+                  </label>
+                  <input
+                    type='text'
+                    value={editNumero}
+                    onChange={(e) => setEditNumero(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
+                  />
+                </div>
+                <div className='md:col-span-5'>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    Complemento
+                  </label>
+                  <input
+                    type='text'
+                    value={editComplemento}
+                    onChange={(e) => setEditComplemento(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
+                  />
+                </div>
+                <div className='md:col-span-6'>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    Bairro
+                  </label>
+                  <input
+                    type='text'
+                    value={editBairro}
+                    onChange={(e) => setEditBairro(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white capitalize focus:outline-none'
+                  />
+                </div>
+                <div className='md:col-span-6'>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    CEP
+                  </label>
+                  <input
+                    type='text'
+                    value={editCep}
+                    onChange={(e) => setEditCep(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md bg-white focus:outline-none'
+                  />
+                </div>
+                <div className='md:col-span-12 flex justify-end gap-3 pt-4 border-t border-custom-grid mt-2'>
+                  <button
+                    type='button'
+                    onClick={() => setModalEditarOpen(false)}
+                    className='px-4 py-2 border border-custom-grid text-custom-muted hover:bg-gray-50 rounded-md font-semibold'
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type='submit'
+                    className='btn-primary px-5 py-2 rounded-md font-semibold shadow-sm'
+                  >
+                    Salvar Alterações
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
       <Modal

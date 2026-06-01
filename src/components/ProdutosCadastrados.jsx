@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Edit2, Trash2, Search, X } from 'lucide-react';
 import Modal from './Modal';
+import { createPortal } from 'react-dom';
 
 export default function ProdutosCadastrados() {
   const [produtos, setProdutos] = useState([]);
@@ -134,7 +135,7 @@ export default function ProdutosCadastrados() {
             <thead>
               <tr className='bg-gray-50 border-b border-custom-grid text-sm font-bold text-custom-muted uppercase tracking-wider'>
                 <th className='py-3 px-4'>Nome do Produto</th>
-                <th className='py-3 px-4 w-44 text-right'>Preço Base</th>
+                <th className='py-3 px-4 w-44 text-left'>Preço Base</th>
                 <th className='py-3 px-4'>Descrição / Detalhes</th>
                 <th className='py-3 px-4 w-28 text-center'>Ações</th>
               </tr>
@@ -151,7 +152,7 @@ export default function ProdutosCadastrados() {
                       ({p.grandeza || 'unid.'})
                     </span>
                   </td>
-                  <td className='py-3 px-4 font-bold text-brand-success text-right font-mono'>
+                  <td className='py-3 px-4 font-bold text-brand-success text-left font-mono'>
                     R${' '}
                     {p.preco.toLocaleString('pt-BR', {
                       minimumFractionDigits: 2,
@@ -199,93 +200,95 @@ export default function ProdutosCadastrados() {
       </div>
 
       {/* MODAL PARA EDIÇÃO DE PRODUTOS */}
-      {modalEditarOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm'>
-          <div className='bg-white rounded-lg shadow-xl border border-custom-grid max-w-2xl w-full overflow-hidden'>
-            <div className='bg-gray-50 px-6 py-4 border-b border-custom-grid flex justify-between items-center'>
-              <h3 className='text-lg font-bold text-custom-main'>
-                Editar Produto
-              </h3>
-              <button
-                onClick={() => setModalEditarOpen(false)}
-                className='text-gray-400 hover:text-custom-main transition-colors'
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <form
-              onSubmit={handleSalvarEdicao}
-              className='p-6 space-y-4 text-base'
-            >
-              <div>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  Nome do Produto *
-                </label>
-                <input
-                  type='text'
-                  value={editNome}
-                  onChange={(e) => setEditNome(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none bg-white capitalize'
-                />
+      {modalEditarOpen &&
+        createPortal(
+          <div className='fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm'>
+            <div className='bg-white rounded-lg shadow-xl border border-custom-grid max-w-2xl w-full overflow-hidden'>
+              <div className='bg-gray-50 px-6 py-4 border-b border-custom-grid flex justify-between items-center'>
+                <h3 className='text-lg font-bold text-custom-main'>
+                  Editar Produto
+                </h3>
+                <button
+                  onClick={() => setModalEditarOpen(false)}
+                  className='text-gray-400 hover:text-custom-main transition-colors'
+                >
+                  <X size={20} />
+                </button>
               </div>
-              <div className='grid grid-cols-2 gap-4'>
+              <form
+                onSubmit={handleSalvarEdicao}
+                className='p-6 space-y-4 text-base'
+              >
                 <div>
                   <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                    Preço Base (R$) *
+                    Nome do Produto *
                   </label>
                   <input
-                    type='number'
-                    step='0.01'
-                    min='0'
-                    value={editPreco}
-                    onChange={(e) => setEditPreco(e.target.value)}
-                    className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none font-semibold bg-white'
+                    type='text'
+                    value={editNome}
+                    onChange={(e) => setEditNome(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none bg-white capitalize'
                   />
+                </div>
+                <div className='grid grid-cols-2 gap-4'>
+                  <div>
+                    <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                      Preço Base (R$) *
+                    </label>
+                    <input
+                      type='number'
+                      step='0.01'
+                      min='0'
+                      value={editPreco}
+                      onChange={(e) => setEditPreco(e.target.value)}
+                      className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none font-semibold bg-white'
+                    />
+                  </div>
+                  <div>
+                    <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                      Grandeza *
+                    </label>
+                    <select
+                      value={editGrandeza}
+                      onChange={(e) => setEditGrandeza(e.target.value)}
+                      className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none bg-white'
+                    >
+                      <option value='unid.'>Unidade (unid.)</option>
+                      <option value='m²'>Metro Quadrado (m²)</option>
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                    Grandeza *
+                    Descrição / Detalhes
                   </label>
-                  <select
-                    value={editGrandeza}
-                    onChange={(e) => setEditGrandeza(e.target.value)}
-                    className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none bg-white'
-                  >
-                    <option value='unid.'>Unidade (unid.)</option>
-                    <option value='m²'>Metro Quadrado (m²)</option>
-                  </select>
+                  <textarea
+                    rows='2'
+                    value={editDescricao}
+                    onChange={(e) => setEditDescricao(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none bg-white resize-none'
+                  />
                 </div>
-              </div>
-              <div>
-                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
-                  Descrição / Detalhes
-                </label>
-                <textarea
-                  rows='2'
-                  value={editDescricao}
-                  onChange={(e) => setEditDescricao(e.target.value)}
-                  className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none bg-white resize-none'
-                />
-              </div>
-              <div className='flex justify-end gap-3 pt-4 border-t border-custom-grid'>
-                <button
-                  type='button'
-                  onClick={() => setModalEditarOpen(false)}
-                  className='px-4 py-2 border border-custom-grid text-custom-muted hover:bg-gray-50 rounded-md font-semibold'
-                >
-                  Cancelar
-                </button>
-                <button
-                  type='submit'
-                  className='btn-primary px-5 py-2 rounded-md font-semibold shadow-sm'
-                >
-                  Salvar Alterações
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                <div className='flex justify-end gap-3 pt-4 border-t border-custom-grid'>
+                  <button
+                    type='button'
+                    onClick={() => setModalEditarOpen(false)}
+                    className='px-4 py-2 border border-custom-grid text-custom-muted hover:bg-gray-50 rounded-md font-semibold'
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type='submit'
+                    className='btn-primary px-5 py-2 rounded-md font-semibold shadow-sm'
+                  >
+                    Salvar Alterações
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
       <Modal

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Trash2, Printer } from 'lucide-react';
-import { calculateArea, calculateItemTotal } from '../utils/helpers';
+import { calculateArea } from '../utils/helpers';
 import Modal from './Modal';
 import logoEmpresa from '../img/logo.png';
 
