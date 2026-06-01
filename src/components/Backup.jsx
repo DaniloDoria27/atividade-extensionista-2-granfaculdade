@@ -122,7 +122,7 @@ export default function Backup() {
           Cópia de Segurança (Backup dos Dados)
         </h3>
         <p className='text-xs text-brand-muted mt-1'>
-          Como o sistema armazena os dados localmente no navegador, use esta
+          Como o sistema armazena os dados localmente no aplicativo, use esta
           tela para evitar a perda de informações em caso de problemas no
           computador.
         </p>
