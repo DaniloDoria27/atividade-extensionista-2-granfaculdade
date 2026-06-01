@@ -35,6 +35,7 @@ export default function NovoOrcamento() {
   const [mostrarListaCliente, setMostrarListaCliente] = useState(false);
   const [buscaProduto, setBuscaProduto] = useState({});
   const [mostrarListaProduto, setMostrarListaProduto] = useState({});
+  const [modalAvisoOpen, setModalAvisoOpen] = useState(false);
 
   const [orcamento, setOrcamento] = useState(() => {
     const salvo = localStorage.getItem('mvp_orcamento_corrente');
@@ -176,6 +177,10 @@ export default function NovoOrcamento() {
   };
 
   const removerLinha = (id) => {
+    if (orcamento.itens.length <= 1) {
+      setModalAvisoOpen(true);
+      return;
+    }
     if (orcamento.itens.length <= 1) {
       alert('O orçamento deve conter pelo menos 1 item.');
       return;
@@ -1226,6 +1231,17 @@ export default function NovoOrcamento() {
         onCancel={() => setModalLimparOpen(false)}
         confirmText='Sim, apagar tudo'
         cancelText='Não, manter'
+      />
+      {/* MODAL DE VALIDAÇÃO: MÍNIMO DE ITENS */}
+      <Modal
+        isOpen={modalAvisoOpen}
+        title='Atenção'
+        message='O orçamento deve conter pelo menos 1 item.'
+        onConfirm={() => setModalAvisoOpen(false)} // Fecha ao clicar no botão principal
+        confirmText='OK'
+        // Como é apenas um aviso impeditivo, omitimos ou desativamos o cancelamento se o seu componente Modal permitir
+        cancelText={null}
+        onCancel={null}
       />
     </div>
   );
