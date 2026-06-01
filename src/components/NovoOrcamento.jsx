@@ -6,7 +6,7 @@ import logoEmpresa from '../img/logo.png';
 
 const DADOS_EMPRESA = {
   nome: 'RQL - Depósito e Marmoraria',
-  celular: '(99) 99999-9999',
+  celular: '(98) 98524-7259 | 98906-8127',
   email: 'depositoemarmorariarql@outlook.com',
   logotipoUrl: logoEmpresa,
   cnpj: '41.505.286/0001-44',
@@ -249,7 +249,10 @@ export default function NovoOrcamento() {
               {DADOS_EMPRESA.nome}
             </h2>
             <p className='text-xs text-custom-muted'>
-              Celular: {DADOS_EMPRESA.celular} | E-mail: {DADOS_EMPRESA.email}
+              Celular: {DADOS_EMPRESA.celular}
+            </p>
+            <p className='text-xs text-custom-muted'>
+              E-mail: {DADOS_EMPRESA.email}
             </p>
             <p className='text-xs text-custom-muted'>
               Endereço: {DADOS_EMPRESA.endereco}
@@ -720,7 +723,9 @@ export default function NovoOrcamento() {
               {DADOS_EMPRESA.nome}
             </h1>
             <p className='text-custom-muted print:text-black'>
-              <strong>Contato Celular:</strong> {DADOS_EMPRESA.celular} |{' '}
+              <strong>Contato Celular:</strong> {DADOS_EMPRESA.celular}
+            </p>
+            <p className='text-custom-muted print:text-black mt-0.5'>
               <strong>E-mail:</strong>{' '}
               <span className='lowercase font-normal'>
                 {DADOS_EMPRESA.email}
