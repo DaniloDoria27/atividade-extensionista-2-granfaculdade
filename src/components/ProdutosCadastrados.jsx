@@ -20,6 +20,8 @@ export default function ProdutosCadastrados() {
   // Estados para MODAIS DE FEEDBACK (Substitutos do alert)
   const [modalAvisoOpen, setModalAvisoOpen] = useState(false);
   const [modalSucessoOpen, setModalSucessoOpen] = useState(false);
+  const [modalExcluidoSucessoOpen, setModalExcluidoSucessoOpen] =
+    useState(false);
 
   useEffect(() => {
     const salvos = localStorage.getItem('mvp_produtos');
@@ -80,6 +82,7 @@ export default function ProdutosCadastrados() {
     salvarLocalStorage(listaFiltrada);
     setModalExcluirOpen(false);
     setProdutoParaExcluir(null);
+    setModalExcluidoSucessoOpen(true);
   };
 
   const produtosFiltradosEOrdenados = produtos
@@ -311,14 +314,22 @@ export default function ProdutosCadastrados() {
         confirmText='Corrigir'
       />
 
-      {/* MODAL DE SUCESSO */}
+      {/* MODAL DE SUCESSO DE EDIÇÃO */}
       <Modal
         isOpen={modalSucessoOpen}
         title='Sucesso!'
         message='O produto foi atualizado com sucesso.'
         onConfirm={() => setModalSucessoOpen(false)}
         confirmText='Entendido'
-        cancelText={null}
+      />
+
+      {/* MODAL DE SUCESSO AO EXCLUIR */}
+      <Modal
+        isOpen={modalExcluidoSucessoOpen}
+        title='Produto Excluído!'
+        message='O produto foi removido do sistema com sucesso.'
+        onConfirm={() => setModalExcluidoSucessoOpen(false)}
+        confirmText='Entendido'
       />
     </div>
   );

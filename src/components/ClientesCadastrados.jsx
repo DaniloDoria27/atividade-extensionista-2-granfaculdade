@@ -31,6 +31,8 @@ export default function ClientesCadastrados() {
   // Estados para MODAIS DE FEEDBACK (Substitutos do alert)
   const [modalAvisoOpen, setModalAvisoOpen] = useState(false);
   const [modalSucessoOpen, setModalSucessoOpen] = useState(false);
+  const [modalExcluidoSucessoOpen, setModalExcluidoSucessoOpen] =
+    useState(false);
 
   useEffect(() => {
     const salvos = localStorage.getItem('mvp_clientes');
@@ -105,6 +107,7 @@ export default function ClientesCadastrados() {
     salvarLocalStorage(listaFiltrada);
     setModalExcluirOpen(false);
     setClienteParaExcluir(null);
+    setModalExcluidoSucessoOpen(true);
   };
 
   const handleAbrirDetalhes = (cliente) => {
@@ -525,14 +528,22 @@ export default function ClientesCadastrados() {
         confirmText='Entendido'
       />
 
-      {/* MODAL DE SUCESSO */}
+      {/* MODAL DE SUCESSO DE EDIÇÃO */}
       <Modal
         isOpen={modalSucessoOpen}
         title='Sucesso!'
-        message='Os dados do cliente foram atualizados perfeitamente.'
+        message='Os dados do cliente foram atualizados.'
         onConfirm={() => setModalSucessoOpen(false)}
-        confirmText='Ótimo'
-        cancelText={null}
+        confirmText='Entendido'
+      />
+
+      {/* MODAL DE SUCESSO AO EXCLUIR */}
+      <Modal
+        isOpen={modalExcluidoSucessoOpen}
+        title='Cliente Excluído!'
+        message='O registro do cliente foi removido do sistema com sucesso.'
+        onConfirm={() => setModalExcluidoSucessoOpen(false)}
+        confirmText='Entendido'
       />
     </div>
   );
