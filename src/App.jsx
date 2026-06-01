@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // <--- ADICIONADO O useEffect
 import Navigation from './components/Navigation';
 import CadastrarCliente from './components/CadastrarCliente';
 import CadastrarProduto from './components/CadastrarProduto';
@@ -9,6 +9,11 @@ import Backup from './components/Backup';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('novo-orcamento');
+
+  // ADICIONADO: Força o título correto do sistema, substituindo o do Vite
+  useEffect(() => {
+    document.title = 'RQL - GERENCIADOR DE ORÇAMENTOS';
+  }, []);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -22,7 +27,7 @@ export default function App() {
         return <ProdutosCadastrados />;
       case 'novo-orcamento':
         return <NovoOrcamento />;
-      case 'backup': // Adicionado o caso para renderizar a tela de backup
+      case 'backup':
         return <Backup />;
       default:
         return <NovoOrcamento />;
@@ -36,8 +41,6 @@ export default function App() {
       </div>
 
       <main className='flex-1 w-full print:p-0'>
-        {/* Adicionado o ID 'conteudo-principal' e a classe 'relative' para isolar as páginas, 
-            deixando o espaço livre fora delas para os modais flutuarem */}
         <div
           id='conteudo-principal'
           className='relative p-4 max-w-[98%] w-full mx-auto print:p-0 print:max-w-none'
