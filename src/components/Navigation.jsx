@@ -4,6 +4,7 @@ import {
   Users,
   Package,
   FileSpreadsheet,
+  ShieldCheck, // Adicionado para o ícone de Backup
 } from 'lucide-react';
 
 export default function Navigation({ activeTab, setActiveTab }) {
@@ -17,6 +18,7 @@ export default function Navigation({ activeTab, setActiveTab }) {
       icon: Package,
     },
     { id: 'novo-orcamento', label: 'Novo Orçamento', icon: FileSpreadsheet },
+    { id: 'backup', label: 'Backup', icon: ShieldCheck }, // Aba de Backup injetada aqui
   ];
 
   return (

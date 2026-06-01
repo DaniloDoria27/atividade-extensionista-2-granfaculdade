@@ -5,6 +5,7 @@ import CadastrarProduto from './components/CadastrarProduto';
 import ClientesCadastrados from './components/ClientesCadastrados';
 import ProdutosCadastrados from './components/ProdutosCadastrados';
 import NovoOrcamento from './components/NovoOrcamento';
+import Backup from './components/Backup';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('novo-orcamento');
@@ -21,6 +22,8 @@ export default function App() {
         return <ProdutosCadastrados />;
       case 'novo-orcamento':
         return <NovoOrcamento />;
+      case 'backup': // Adicionado o caso para renderizar a tela de backup
+        return <Backup />;
       default:
         return <NovoOrcamento />;
     }
