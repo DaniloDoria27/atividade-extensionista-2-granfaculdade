@@ -5,7 +5,7 @@ import Modal from './Modal';
 import logoEmpresa from '../img/logo.png';
 
 const DADOS_EMPRESA = {
-  nome: 'RQL - Depósito e Marmoraria ',
+  nome: 'RQL - Depósito e Marmoraria',
   celular: '(99) 99999-9999',
   email: 'depositoemarmorariarql@outlook.com',
   logotipoUrl: logoEmpresa,
@@ -34,8 +34,8 @@ export default function NovoOrcamento() {
       prazoEntrega: '',
       tipoPagamento: 'Pix',
       parcelamento: 'À vista',
-      descontoReais: 0,
-      acrescimoReais: 0,
+      descontoReais: '',
+      acrescimoReais: '',
       observacoes: '',
       itens: [
         {
@@ -44,7 +44,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
-          precoUnitario: 0,
+          precoUnitario: '',
         },
         {
           id: crypto.randomUUID(),
@@ -52,7 +52,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
-          precoUnitario: 0,
+          precoUnitario: '',
         },
         {
           id: crypto.randomUUID(),
@@ -60,7 +60,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
-          precoUnitario: 0,
+          precoUnitario: '',
         },
       ],
     };
@@ -71,16 +71,6 @@ export default function NovoOrcamento() {
     setProdutos(JSON.parse(localStorage.getItem('mvp_produtos') || '[]'));
   }, []);
 
-  // // Validação Cirúrgica de Data de Vencimento retroativa
-  // useEffect(() => {
-  //   if (orcamento.vencimento && orcamento.vencimento < orcamento.data) {
-  //     alert(
-  //       'A data de vencimento não pode ser anterior à data de emissão do orçamento!'
-  //     );
-  //     setOrcamento((prev) => ({ ...prev, vencimento: '' }));
-  //   }
-  // }, [orcamento.vencimento, orcamento.data]);
-
   useEffect(() => {
     localStorage.setItem('mvp_orcamento_corrente', JSON.stringify(orcamento));
   }, [orcamento]);
@@ -88,14 +78,14 @@ export default function NovoOrcamento() {
   const handleMetaChange = (e) => {
     const { name, value } = e.target;
 
-    // Validação imediata e segura ao selecionar a data no calendário
+    // Validação imediata ao selecionar a data no calendário
     if (name === 'vencimento' && value) {
       if (value < orcamento.data) {
         alert(
           'A data de vencimento não pode ser anterior à data de emissão do orçamento!'
         );
         setOrcamento((prev) => ({ ...prev, vencimento: '' }));
-        return; // Aborta a atualização do estado com a data retroativa
+        return;
       }
     }
 
@@ -107,31 +97,24 @@ export default function NovoOrcamento() {
       const novosItens = prev.itens.map((item) => {
         if (item.id !== id) return item;
         let updatedItem = { ...item, [field]: value };
+
         if (field === 'produtoId') {
-          const prodCadastrado = produtos.find((p) => p.id === value);
-          updatedItem.precoUnitario = prodCadastrado ? prodCadastrado.preco : 0;
+          // Busca o produto pelo nome selecionado via datalist ou ID direto
+          const prodCadastrado = produtos.find(
+            (p) => p.nome === value || p.id === value
+          );
+          if (prodCadastrado) {
+            updatedItem.produtoId = prodCadastrado.id;
+            updatedItem.precoUnitario = prodCadastrado.preco;
+          } else {
+            updatedItem.produtoId = value;
+          }
         }
         return updatedItem;
       });
       return { ...prev, itens: novosItens };
     });
   };
-
-  // const handleVencimentoBlur = () => {
-  //   // Só valida se o campo de vencimento estiver totalmente preenchido
-  //   if (orcamento.vencimento) {
-  //     // Verifica se a string da data tem o tamanho completo de um input date (YYYY-MM-DD = 10 caracteres)
-  //     if (
-  //       orcamento.vencimento.length === 10 &&
-  //       orcamento.vencimento < orcamento.data
-  //     ) {
-  //       alert(
-  //         'A data de vencimento não pode ser anterior à data de emissão do orçamento!'
-  //       );
-  //       setOrcamento((prev) => ({ ...prev, vencimento: '' }));
-  //     }
-  //   }
-  // };
 
   const adicionarLinha = () => {
     setOrcamento((prev) => ({
@@ -144,7 +127,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
-          precoUnitario: 0,
+          precoUnitario: '',
         },
       ],
     }));
@@ -169,8 +152,8 @@ export default function NovoOrcamento() {
       prazoEntrega: '',
       tipoPagamento: 'Pix',
       parcelamento: 'À vista',
-      descontoReais: 0,
-      acrescimoReais: 0,
+      descontoReais: '',
+      acrescimoReais: '',
       observacoes: '',
       itens: [
         {
@@ -179,7 +162,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
-          precoUnitario: 0,
+          precoUnitario: '',
         },
         {
           id: crypto.randomUUID(),
@@ -187,7 +170,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
-          precoUnitario: 0,
+          precoUnitario: '',
         },
         {
           id: crypto.randomUUID(),
@@ -195,7 +178,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
-          precoUnitario: 0,
+          precoUnitario: '',
         },
       ],
     });
@@ -204,18 +187,14 @@ export default function NovoOrcamento() {
     setModalLimparOpen(false);
   };
 
-  const clienteSelecionado = clientes.find((c) => c.id === orcamento.clienteId);
+  const clienteSelecionado = clientes.find(
+    (c) => c.id === orcamento.clienteId || c.nome === orcamento.clienteId
+  );
 
   const subtotalGeral = orcamento.itens.reduce((acc, item) => {
-    return (
-      acc +
-      calculateItemTotal(
-        item.quantidade,
-        item.precoUnitario,
-        item.largura,
-        item.altura
-      )
-    );
+    const qtd = parseInt(item.quantidade) || 0;
+    const preco = parseFloat(item.precoUnitario) || 0;
+    return acc + calculateItemTotal(qtd, preco, item.largura, item.altura);
   }, 0);
 
   const valorDesconto = parseFloat(orcamento.descontoReais) || 0;
@@ -255,7 +234,7 @@ export default function NovoOrcamento() {
       {/* CABEÇALHO */}
       <div className='bg-custom-surface p-5 rounded-lg border border-custom-grid shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4 items-center print:hidden'>
         <div className='flex items-center gap-4'>
-          <div className='h-20 w-20 rounded-lg flex items-center justify-center   '>
+          <div className='h-20 w-20 rounded-lg flex items-center justify-center'>
             <img
               src={DADOS_EMPRESA.logotipoUrl}
               alt='Logo Empresa'
@@ -304,19 +283,31 @@ export default function NovoOrcamento() {
           <label className='block text-xs font-semibold text-custom-muted uppercase mb-1'>
             Selecionar Cliente *
           </label>
-          <select
+          <input
+            list='lista-clientes'
             name='clienteId'
-            value={orcamento.clienteId}
-            onChange={handleMetaChange}
+            value={
+              clientes.find((c) => c.id === orcamento.clienteId)?.nome ||
+              orcamento.clienteId
+            }
+            onChange={(e) => {
+              const valorDigitado = e.target.value;
+              const cliObj = clientes.find((c) => c.nome === valorDigitado);
+              handleMetaChange({
+                target: {
+                  name: 'clienteId',
+                  value: cliObj ? cliObj.id : valorDigitado,
+                },
+              });
+            }}
+            placeholder='Digite para buscar o cliente...'
             className='w-full px-2 py-1.5 border border-custom-grid rounded-md focus:outline-none text-sm bg-white capitalize'
-          >
-            <option value=''>-- Escolha um Cliente --</option>
+          />
+          <datalist id='lista-clientes'>
             {clientes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
+              <option key={c.id} value={c.nome} />
             ))}
-          </select>
+          </datalist>
         </div>
 
         <div>
@@ -341,7 +332,7 @@ export default function NovoOrcamento() {
             name='vencimento'
             value={orcamento.vencimento}
             onChange={handleMetaChange}
-            onKeyDown={(e) => e.preventDefault()} // <--- Bloqueia o teclado perfeitamente
+            onKeyDown={(e) => e.preventDefault()}
             className='w-full px-2 py-1.5 border border-custom-grid rounded-md focus:outline-none text-sm cursor-pointer'
           />
         </div>
@@ -360,7 +351,6 @@ export default function NovoOrcamento() {
           />
         </div>
 
-        {/* FORMA DE PAGAMENTO MELHORADA */}
         <div>
           <label className='block text-xs font-semibold text-custom-muted uppercase mb-1'>
             Forma Pagamento
@@ -388,7 +378,6 @@ export default function NovoOrcamento() {
           )}
         </div>
 
-        {/* PARCELAMENTO MELHORADO */}
         <div>
           <label className='block text-xs font-semibold text-custom-muted uppercase mb-1'>
             Parcelamento
@@ -459,9 +448,11 @@ export default function NovoOrcamento() {
           <tbody className='divide-y divide-custom-grid text-sm'>
             {orcamento.itens.map((item, index) => {
               const area = calculateArea(item.largura, item.altura);
+              const qtd = parseInt(item.quantidade) || 0;
+              const preco = parseFloat(item.precoUnitario) || 0;
               const totalItem = calculateItemTotal(
-                item.quantidade,
-                item.precoUnitario,
+                qtd,
+                preco,
                 item.largura,
                 item.altura
               );
@@ -475,20 +466,23 @@ export default function NovoOrcamento() {
                     {index + 1}
                   </td>
                   <td className='py-1 px-2'>
-                    <select
-                      value={item.produtoId}
+                    <input
+                      list={`lista-produtos-${item.id}`}
+                      value={
+                        produtos.find((p) => p.id === item.produtoId)?.nome ||
+                        item.produtoId
+                      }
                       onChange={(e) =>
                         handleItemChange(item.id, 'produtoId', e.target.value)
                       }
+                      placeholder='Buscar produto...'
                       className='w-full px-2 py-1 border border-custom-grid rounded focus:outline-none text-sm bg-white capitalize'
-                    >
-                      <option value=''>-- Escolha --</option>
+                    />
+                    <datalist id={`lista-produtos-${item.id}`}>
                       {produtos.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.nome}
-                        </option>
+                        <option key={p.id} value={p.nome} />
                       ))}
-                    </select>
+                    </datalist>
                   </td>
                   <td className='py-1 px-2'>
                     <input
@@ -509,6 +503,7 @@ export default function NovoOrcamento() {
                     <input
                       type='number'
                       step='0.01'
+                      min='0'
                       placeholder='0.00'
                       value={item.largura}
                       onChange={(e) =>
@@ -521,6 +516,7 @@ export default function NovoOrcamento() {
                     <input
                       type='number'
                       step='0.01'
+                      min='0'
                       placeholder='0.00'
                       value={item.altura}
                       onChange={(e) =>
@@ -546,12 +542,12 @@ export default function NovoOrcamento() {
                         step='0.01'
                         min='0'
                         placeholder='0.00'
-                        value={item.precoUnitario || ''}
+                        value={item.precoUnitario}
                         onChange={(e) =>
                           handleItemChange(
                             item.id,
                             'precoUnitario',
-                            parseFloat(e.target.value) || 0
+                            e.target.value
                           )
                         }
                         className='w-full pl-7 pr-1 py-1 border border-custom-grid rounded focus:outline-none text-sm font-medium text-center'
@@ -604,6 +600,7 @@ export default function NovoOrcamento() {
                 <input
                   type='number'
                   step='0.01'
+                  min='0'
                   value={orcamento.descontoReais}
                   onChange={(e) =>
                     setOrcamento((prev) => ({
@@ -633,6 +630,7 @@ export default function NovoOrcamento() {
                 <input
                   type='number'
                   step='0.01'
+                  min='0'
                   value={orcamento.acrescimoReais}
                   onChange={(e) =>
                     setOrcamento((prev) => ({
@@ -811,9 +809,11 @@ export default function NovoOrcamento() {
             {orcamento.itens.map((item, index) => {
               const prod = produtos.find((p) => p.id === item.produtoId);
               const area = calculateArea(item.largura, item.altura);
+              const qtd = parseInt(item.quantidade) || 0;
+              const preco = parseFloat(item.precoUnitario) || 0;
               const totalItem = calculateItemTotal(
-                item.quantidade,
-                item.precoUnitario,
+                qtd,
+                preco,
                 item.largura,
                 item.altura
               );
@@ -846,7 +846,7 @@ export default function NovoOrcamento() {
                   </td>
                   <td className='border border-black p-1.5 text-center'>
                     R${' '}
-                    {item.precoUnitario.toLocaleString('pt-BR', {
+                    {preco.toLocaleString('pt-BR', {
                       minimumFractionDigits: 2,
                     })}
                   </td>
@@ -870,7 +870,7 @@ export default function NovoOrcamento() {
               </p>
               <p>
                 <strong>Prazo de Entrega:</strong>{' '}
-                {orcamento.prazoEntrega || 'A combinar'}
+                {orcamento.prazoEntrega || 'A combiner'}
               </p>
               <p>
                 <strong>Forma de Pagamento:</strong>{' '}
@@ -951,7 +951,6 @@ export default function NovoOrcamento() {
 
       {/* BLOCO DE ASSINATURAS NO PDF */}
       <div className='mt-8 grid grid-cols-2 gap-6 text-center print:grid print:grid-cols-2 print:gap-6'>
-        {/* Assinatura da Empresa */}
         <div className='flex flex-col items-center justify-end h-16'>
           <div className='w-full border-t border-black max-w-[280px]'></div>
           <p className='text-[10px] font-bold uppercase tracking-wide mt-1 text-gray-700'>
@@ -960,7 +959,6 @@ export default function NovoOrcamento() {
           <p className='text-[9px] text-gray-500 font-normal'>Emitente</p>
         </div>
 
-        {/* Assinatura do Cliente */}
         <div className='flex flex-col items-center justify-end h-16'>
           <div className='w-full border-t border-black max-w-[280px]'></div>
           <p className='text-[10px] font-bold uppercase tracking-wide mt-1 text-gray-700 truncate max-w-[280px]'>
