@@ -1,249 +1,301 @@
 import { useState, useEffect } from 'react';
-import { Search, Package, Trash2, Pencil, Save, X } from 'lucide-react';
+import { Edit2, Trash2, Search, X } from 'lucide-react';
 import Modal from './Modal';
 
 export default function ProdutosCadastrados() {
   const [produtos, setProdutos] = useState([]);
-  const [busca, setBusca] = useState('');
-  const [modalDeletarOpen, setModalDeletarOpen] = useState(false);
-  const [produtoParaDeletar, setProdutoParaDeletar] = useState(null);
+  const [pesquisa, setPesquisa] = useState('');
+  const [modalExcluirOpen, setModalExcluirOpen] = useState(false);
+  const [produtoParaExcluir, setProdutoParaExcluir] = useState(null);
 
-  // Controle de edição inline
-  const [produtoEditando, setProdutoEditando] = useState(null);
-  const [dadosEdicao, setDadosEdicao] = useState({});
-
-  const carregarProdutos = () => {
-    const dados = JSON.parse(localStorage.getItem('mvp_produtos') || '[]');
-    dados.sort((a, b) => a.nome.localeCompare(b.nome));
-    setProdutos(dados);
-  };
+  // Estados para o MODAL DE EDIÇÃO
+  const [modalEditarOpen, setModalEditarOpen] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [editNome, setEditNome] = useState('');
+  const [editPreco, setEditPreco] = useState('');
+  const [editDescricao, setEditDescricao] = useState('');
+  const [editGrandeza, setEditGrandeza] = useState('unid.');
 
   useEffect(() => {
-    carregarProdutos();
+    const salvos = localStorage.getItem('mvp_produtos');
+    if (salvos) {
+      setProdutos(JSON.parse(salvos));
+    }
   }, []);
 
-  const produtosFiltrados = produtos.filter((produto) => {
-    const termo = busca.toLowerCase().trim();
-    return (
-      produto.nome.includes(termo) ||
-      (produto.descricao && produto.descricao.includes(termo))
-    );
-  });
-
-  const handleGatilhoDeletar = (produto) => {
-    setProdutoParaDeletar(produto);
-    setModalDeletarOpen(true);
+  const salvarLocalStorage = (novosProdutos) => {
+    localStorage.setItem('mvp_produtos', JSON.stringify(novosProdutos));
+    setProdutos(novosProdutos);
   };
 
-  const confirmarExclusao = () => {
-    if (produtoParaDeletar) {
-      const novaLista = produtos.filter((p) => p.id !== produtoParaDeletar.id);
-      localStorage.setItem('mvp_produtos', JSON.stringify(novaLista));
-      carregarProdutos();
-    }
-    setModalDeletarOpen(false);
-    setProdutoParaDeletar(null);
+  const handleAbrirEditar = (produto) => {
+    setEditId(produto.id);
+    setEditNome(produto.nome);
+    setEditPreco(produto.preco);
+    setEditDescricao(produto.descricao || '');
+    setEditGrandeza(produto.grandeza || 'unid.');
+    setModalEditarOpen(true);
   };
 
-  // Funções de Edição
-  const iniciarEdicao = (produto) => {
-    setProdutoEditando(produto.id);
-    setDadosEdicao({ ...produto });
-  };
-
-  const handleEdicaoChange = (e) => {
-    const { name, value } = e.target;
-    setDadosEdicao({ ...dadosEdicao, [name]: value });
-  };
-
-  const salvarEdicao = (id) => {
-    const precoNumerico = parseFloat(dadosEdicao.preco);
-
-    if (!dadosEdicao.nome.trim()) {
-      alert('O nome do produto não pode ficar vazio.');
-      return;
-    }
-    if (isNaN(precoNumerico) || precoNumerico <= 0) {
-      alert('Por favor, insira um preço válido maior que zero.');
+  const handleSalvarEdicao = (e) => {
+    e.preventDefault();
+    if (!editNome.trim() || !editPreco) {
+      alert('Por favor, preencha o nome e o preço do produto.');
       return;
     }
 
-    const novaLista = produtos.map((p) =>
-      p.id === id ? { ...dadosEdicao, preco: precoNumerico } : p
-    );
+    const listaAtualizada = produtos.map((p) => {
+      if (p.id === editId) {
+        return {
+          ...p,
+          nome: editNome.trim(),
+          preco: parseFloat(editPreco) || 0,
+          descricao: editDescricao.trim(),
+          grandeza: editGrandeza,
+        };
+      }
+      return p;
+    });
 
-    localStorage.setItem('mvp_produtos', JSON.stringify(novaLista));
-    setProdutoEditando(null);
-    carregarProdutos();
+    salvarLocalStorage(listaAtualizada);
+    setModalEditarOpen(false);
     alert('Produto atualizado com sucesso!');
   };
 
+  const handleAbrirExcluir = (produto) => {
+    setProdutoParaExcluir(produto);
+    setModalExcluirOpen(true);
+  };
+
+  const confirmExcluir = () => {
+    if (!produtoParaExcluir) return;
+    const listaFiltrada = produtos.filter(
+      (p) => p.id !== produtoParaExcluir.id
+    );
+    salvarLocalStorage(listaFiltrada);
+    setModalExcluirOpen(false);
+    setProdutoParaExcluir(null);
+  };
+
+  // Filtro por pesquisa com remoção de acentos e ordenação alfabética
+  const produtosFiltradosEOrdenados = produtos
+    .filter((p) => {
+      // Função auxiliar para remover acentos e deixar em minúsculo
+      const normalizar = (txt) =>
+        txt
+          ? txt
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .toLowerCase()
+          : '';
+
+      const termo = normalizar(pesquisa);
+
+      const nomeNormalizado = normalizar(p.nome);
+      const descricaoNormalizada = normalizar(p.descricao);
+
+      return (
+        nomeNormalizado.includes(termo) || descricaoNormalizada.includes(termo)
+      );
+    })
+    .sort((a, b) =>
+      a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
+    );
+
   return (
-    <div className='max-w-full mx-auto mt-4'>
-      <div className='mb-4 relative'>
-        <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-brand-muted'>
-          <Search size={18} />
-        </div>
+    <div className='max-w-full w-full mx-auto mt-2 space-y-4 text-base font-sans'>
+      {/* BARRA DE PESQUISA */}
+      <div className='bg-custom-surface p-4 rounded-lg border border-custom-grid shadow-sm flex items-center gap-3 bg-white'>
+        <Search size={20} className='text-custom-muted' />
         <input
           type='text'
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder='Buscar produto por nome ou descrição...'
-          className='w-full pl-10 pr-4 py-2.5 border border-brand-border rounded-lg bg-brand-surface focus:outline-none focus:ring-1 focus:ring-brand-primary text-sm shadow-sm'
+          value={pesquisa}
+          onChange={(e) => setPesquisa(e.target.value)}
+          placeholder='Pesquisar produto por nome ou descrição...'
+          className='w-full bg-transparent focus:outline-none text-base'
         />
+        {pesquisa && (
+          <button
+            onClick={() => setPesquisa('')}
+            className='text-gray-400 hover:text-custom-main'
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
-      <p className='text-xs text-brand-muted mb-3 font-medium'>
-        {produtosFiltrados.length}{' '}
-        {produtosFiltrados.length === 1
-          ? 'produto encontrado'
-          : 'produtos encontrados'}
-      </p>
-
-      {produtosFiltrados.length === 0 ? (
-        <div className='bg-brand-surface p-12 text-center rounded-lg border border-brand-border shadow-sm'>
-          <p className='text-brand-muted text-sm'>
-            Nenhum produto cadastrado ou encontrado com esse termo.
-          </p>
-        </div>
-      ) : (
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
-          {produtosFiltrados.map((produto) => (
-            <div
-              key={produto.id}
-              className='bg-brand-surface p-5 rounded-lg border border-brand-border shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden group min-h-[190px]'
-            >
-              {produtoEditando === produto.id ? (
-                /* MODO EDIÇÃO ATIVO */
-                <div className='space-y-2 text-sm text-left flex-1 flex flex-col justify-between h-full w-full'>
-                  <div className='space-y-2 w-full'>
-                    <h4 className='font-bold text-xs text-brand-primary uppercase tracking-wider mb-1'>
-                      Editar Produto
-                    </h4>
-                    <div>
-                      <label className='block text-[11px] font-medium text-gray-500'>
-                        Nome:
-                      </label>
-                      <input
-                        type='text'
-                        name='nome'
-                        value={dadosEdicao.nome}
-                        onChange={handleEdicaoChange}
-                        className='w-full px-2 py-0.5 text-xs border border-brand-border rounded focus:outline-none focus:ring-1 focus:ring-brand-primary capitalize'
-                      />
-                    </div>
-                    <div>
-                      <label className='block text-[11px] font-medium text-gray-500'>
-                        Descrição:
-                      </label>
-                      <textarea
-                        name='descricao'
-                        rows='2'
-                        value={dadosEdicao.descricao}
-                        onChange={handleEdicaoChange}
-                        className='w-full px-2 py-0.5 text-xs border border-brand-border rounded focus:outline-none focus:ring-1 focus:ring-brand-primary resize-none capitalize'
-                      />
-                    </div>
-                    <div>
-                      <label className='block text-[11px] font-medium text-gray-500'>
-                        Preço Unitário (R$):
-                      </label>
-                      <input
-                        type='number'
-                        name='preco'
-                        step='0.01'
-                        value={dadosEdicao.preco}
-                        onChange={handleEdicaoChange}
-                        className='w-full px-2 py-0.5 text-xs border border-brand-border rounded focus:outline-none focus:ring-1 focus:ring-brand-primary'
-                      />
-                    </div>
-                  </div>
-
-                  <div className='flex justify-end gap-2 pt-2 border-t border-brand-border mt-3 w-full'>
+      {/* TABELA DE PRODUTOS */}
+      <div className='bg-custom-surface p-6 rounded-lg border border-custom-grid shadow-sm'>
+        <h3 className='font-bold text-xl text-custom-main mb-4'>
+          Produtos Atuais
+        </h3>
+        <div className='overflow-x-auto border border-custom-grid rounded-md shadow-sm bg-white'>
+          <table className='w-full text-left border-collapse min-w-[750px]'>
+            <thead>
+              <tr className='bg-gray-50 border-b border-custom-grid text-sm font-bold text-custom-muted uppercase tracking-wider'>
+                <th className='py-3 px-4'>Nome do Produto</th>
+                <th className='py-3 px-4 w-44 text-right'>Preço Base</th>
+                <th className='py-3 px-4'>Descrição / Detalhes</th>
+                <th className='py-3 px-4 w-28 text-center'>Ações</th>
+              </tr>
+            </thead>
+            <tbody className='divide-y divide-custom-grid text-base capitalize'>
+              {produtosFiltradosEOrdenados.map((p) => (
+                <tr
+                  key={p.id}
+                  className='hover:bg-gray-50/70 transition-colors'
+                >
+                  <td className='py-3 px-4 font-semibold text-custom-main'>
+                    {p.nome}{' '}
+                    <span className='text-gray-400 font-normal text-xs lowercase ml-1'>
+                      ({p.grandeza || 'unid.'})
+                    </span>
+                  </td>
+                  <td className='py-3 px-4 font-bold text-brand-success text-right font-mono'>
+                    R${' '}
+                    {p.preco.toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                    })}
+                  </td>
+                  <td
+                    className='py-3 px-4 text-custom-muted lowercase text-sm max-w-xs truncate'
+                    title={p.descricao}
+                  >
+                    {p.descricao || (
+                      <span className='text-gray-300 italic'>
+                        Sem descrição cadastrada
+                      </span>
+                    )}
+                  </td>
+                  <td className='py-3 px-4 text-center space-x-1'>
                     <button
-                      type='button'
-                      onClick={() => setProdutoEditando(null)}
-                      className='flex items-center gap-1 px-2 py-0.5 border border-brand-border text-xs rounded text-brand-muted hover:bg-gray-100 transition-colors'
+                      onClick={() => handleAbrirEditar(p)}
+                      className='p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors'
                     >
-                      <X size={12} /> Cancelar
+                      <Edit2 size={16} />
                     </button>
                     <button
-                      type='button'
-                      onClick={() => salvarEdicao(produto.id)}
-                      className='flex items-center gap-1 px-2 py-0.5 bg-brand-primary text-white text-xs rounded hover:bg-opacity-90 font-medium transition-colors shadow-sm'
+                      onClick={() => handleAbrirExcluir(p)}
+                      className='p-1.5 text-brand-danger hover:bg-red-50 rounded transition-colors'
                     >
-                      <Save size={12} /> Salvar
+                      <Trash2 size={16} />
                     </button>
-                  </div>
-                </div>
-              ) : (
-                /* MODO VISUALIZAÇÃO ORIGINAL */
-                <>
-                  <div>
-                    <div className='flex items-start justify-between gap-4 mb-2'>
-                      <h3 className='font-bold text-base text-brand-main capitalize tracking-tight line-clamp-2'>
-                        {produto.nome}
-                      </h3>
-                      <div className='h-8 w-8 rounded-lg bg-gray-50 text-brand-muted flex items-center justify-center shrink-0'>
-                        <Package size={16} />
-                      </div>
-                    </div>
-
-                    <p className='text-xs text-brand-muted line-clamp-3 mb-4 min-h-[2rem] capitalize'>
-                      {produto.descricao || (
-                        <span className='text-gray-300 italic'>
-                          Sem descrição informada
-                        </span>
-                      )}
-                    </p>
-                  </div>
-
-                  <div className='border-t border-brand-border pt-2 mt-2 flex items-center justify-between'>
-                    <div className='flex items-center gap-1'>
-                      <button
-                        type='button'
-                        onClick={() => iniciarEdicao(produto)}
-                        className='p-1.5 text-gray-400 hover:text-brand-primary hover:bg-gray-100 rounded-md transition-colors'
-                        title='Editar Produto'
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        type='button'
-                        onClick={() => handleGatilhoDeletar(produto)}
-                        className='p-1.5 text-gray-400 hover:text-brand-danger hover:bg-red-50 rounded-md transition-colors'
-                        title='Excluir Produto'
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-
-                    <div className='flex items-center text-brand-success font-bold text-lg'>
-                      <span className='text-xs font-semibold mr-0.5'>R$</span>
-                      {produto.preco.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </div>
-                  </div>
-                </>
+                  </td>
+                </tr>
+              ))}
+              {produtosFiltradosEOrdenados.length === 0 && (
+                <tr>
+                  <td
+                    colSpan='4'
+                    className='text-center py-6 text-custom-muted italic bg-gray-50'
+                  >
+                    Nenhum produto encontrado.
+                  </td>
+                </tr>
               )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* MODAL PARA EDIÇÃO DE PRODUTOS */}
+      {modalEditarOpen && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm'>
+          <div className='bg-white rounded-lg shadow-xl border border-custom-grid max-w-2xl w-full overflow-hidden'>
+            <div className='bg-gray-50 px-6 py-4 border-b border-custom-grid flex justify-between items-center'>
+              <h3 className='text-lg font-bold text-custom-main'>
+                Editar Produto
+              </h3>
+              <button
+                onClick={() => setModalEditarOpen(false)}
+                className='text-gray-400 hover:text-custom-main transition-colors'
+              >
+                <X size={20} />
+              </button>
             </div>
-          ))}
+            <form
+              onSubmit={handleSalvarEdicao}
+              className='p-6 space-y-4 text-base'
+            >
+              <div>
+                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                  Nome do Produto *
+                </label>
+                <input
+                  type='text'
+                  value={editNome}
+                  onChange={(e) => setEditNome(e.target.value)}
+                  className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none bg-white capitalize'
+                />
+              </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    Preço Base (R$) *
+                  </label>
+                  <input
+                    type='number'
+                    step='0.01'
+                    min='0'
+                    value={editPreco}
+                    onChange={(e) => setEditPreco(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none font-semibold bg-white'
+                  />
+                </div>
+                <div>
+                  <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                    Grandeza *
+                  </label>
+                  <select
+                    value={editGrandeza}
+                    onChange={(e) => setEditGrandeza(e.target.value)}
+                    className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none bg-white'
+                  >
+                    <option value='unid.'>Unidade (unid.)</option>
+                    <option value='m²'>Metro Quadrado (m²)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+                  Descrição / Detalhes
+                </label>
+                <textarea
+                  rows='2'
+                  value={editDescricao}
+                  onChange={(e) => setEditDescricao(e.target.value)}
+                  className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none bg-white resize-none'
+                />
+              </div>
+              <div className='flex justify-end gap-3 pt-4 border-t border-custom-grid'>
+                <button
+                  type='button'
+                  onClick={() => setModalEditarOpen(false)}
+                  className='px-4 py-2 border border-custom-grid text-custom-muted hover:bg-gray-50 rounded-md font-semibold'
+                >
+                  Cancelar
+                </button>
+                <button
+                  type='submit'
+                  className='btn-primary px-5 py-2 rounded-md font-semibold shadow-sm'
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
       <Modal
-        isOpen={modalDeletarOpen}
+        isOpen={modalExcluirOpen}
         title='Excluir Produto'
-        message={`Atenção! Você está prestes a remover permanentemente o produto:\n"${produtoParaDeletar?.nome?.toUpperCase()}"\n\nEsta ação não poderá ser desfeita e ele deixará de constar nos seletores. Confirma?`}
-        onConfirm={confirmarExclusao}
-        onCancel={() => {
-          setModalDeletarOpen(false);
-          setProdutoParaDeletar(null);
-        }}
+        message={`Tem certeza que deseja excluir o produto "${produtoParaExcluir?.nome}"?`}
+        onConfirm={confirmExcluir}
+        onCancel={() => setModalExcluirOpen(false)}
         confirmText='Sim, excluir'
-        cancelText='Não, cancelar'
+        cancelText='Não, manter'
       />
     </div>
   );

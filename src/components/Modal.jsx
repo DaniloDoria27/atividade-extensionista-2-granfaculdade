@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { AlertTriangle } from 'lucide-react';
 
 export default function Modal({
@@ -11,8 +12,8 @@ export default function Modal({
 }) {
   if (!isOpen) return null;
 
-  return (
-    <div className='fixed -inset-5 z-[9999] flex items-center justify-center bg-black bg-opacity-50 p-4 animate-fade-in'>
+  return createPortal(
+    <div className='fixed inset-0 z-[999999] flex items-center justify-center bg-black/50 p-4 animate-fade-in'>
       <div className='w-full max-w-md rounded-lg bg-brand-surface p-6 shadow-xl border border-brand-border'>
         <div className='flex items-start gap-3'>
           <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600'>
@@ -49,6 +50,7 @@ export default function Modal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body // <--- Injeta o HTML na raiz do sistema mantendo o funcionamento do React intacto
   );
 }

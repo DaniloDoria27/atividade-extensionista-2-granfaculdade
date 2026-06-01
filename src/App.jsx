@@ -35,9 +35,15 @@ export default function App() {
         <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
 
-      {/* Alterado para ocupar 98% da largura da tela, aproveitando o espaço horizontal */}
-      <main className='flex-1 p-4 max-w-[98%] w-full mx-auto print:p-0 print:max-w-none'>
-        {renderTabContent()}
+      <main className='flex-1 w-full print:p-0'>
+        {/* Adicionado o ID 'conteudo-principal' e a classe 'relative' para isolar as páginas, 
+            deixando o espaço livre fora delas para os modais flutuarem */}
+        <div
+          id='conteudo-principal'
+          className='relative p-4 max-w-[98%] w-full mx-auto print:p-0 print:max-w-none'
+        >
+          {renderTabContent()}
+        </div>
       </main>
     </div>
   );

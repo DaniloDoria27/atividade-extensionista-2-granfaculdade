@@ -14,14 +14,27 @@ const DADOS_EMPRESA = {
   endereco: 'Av. dos Africanos, 50 - Areinha - São Luís/MA - CEP: 65032-075',
 };
 
+const normalizarString = (str) => {
+  if (!str) return '';
+  return str
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+};
+
 export default function NovoOrcamento() {
   const [clientes, setClientes] = useState([]);
   const [produtos, setProdutos] = useState([]);
   const [modalLimparOpen, setModalLimparOpen] = useState(false);
 
-  // Estados locais para controlar se o usuário quer digitar algo personalizado
   const [customPagamento, setCustomPagamento] = useState('');
   const [customParcelamento, setCustomParcelamento] = useState('');
+
+  const [buscaCliente, setBuscaCliente] = useState('');
+  const [mostrarListaCliente, setMostrarListaCliente] = useState(false);
+  const [buscaProduto, setBuscaProduto] = useState({});
+  const [mostrarListaProduto, setMostrarListaProduto] = useState({});
 
   const [orcamento, setOrcamento] = useState(() => {
     const salvo = localStorage.getItem('mvp_orcamento_corrente');
@@ -29,13 +42,21 @@ export default function NovoOrcamento() {
 
     return {
       clienteId: '',
-      data: new Date().toISOString().split('T')[0],
+      data: (() => {
+        const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+        const dia = String(hoje.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+      })(),
       vencimento: '',
       prazoEntrega: '',
       tipoPagamento: 'Pix',
       parcelamento: 'À vista',
       descontoReais: '',
+      descontoPorcentagem: '',
       acrescimoReais: '',
+      acrescimoPorcentagem: '',
       observacoes: '',
       itens: [
         {
@@ -44,6 +65,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
+          areaManual: '',
           precoUnitario: '',
         },
         {
@@ -52,6 +74,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
+          areaManual: '',
           precoUnitario: '',
         },
         {
@@ -60,6 +83,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
+          areaManual: '',
           precoUnitario: '',
         },
       ],
@@ -67,8 +91,19 @@ export default function NovoOrcamento() {
   });
 
   useEffect(() => {
-    setClientes(JSON.parse(localStorage.getItem('mvp_clientes') || '[]'));
-    setProdutos(JSON.parse(localStorage.getItem('mvp_produtos') || '[]'));
+    const clientesSalvos = JSON.parse(
+      localStorage.getItem('mvp_clientes') || '[]'
+    );
+    const produtosSalvos = JSON.parse(
+      localStorage.getItem('mvp_produtos') || '[]'
+    );
+    setClientes(clientesSalvos);
+    setProdutos(produtosSalvos);
+
+    if (orcamento.clienteId) {
+      const cli = clientesSalvos.find((c) => c.id === orcamento.clienteId);
+      if (cli) setBuscaCliente(cli.nome);
+    }
   }, []);
 
   useEffect(() => {
@@ -77,8 +112,6 @@ export default function NovoOrcamento() {
 
   const handleMetaChange = (e) => {
     const { name, value } = e.target;
-
-    // Validação imediata ao selecionar a data no calendário
     if (name === 'vencimento' && value) {
       if (value < orcamento.data) {
         alert(
@@ -88,7 +121,6 @@ export default function NovoOrcamento() {
         return;
       }
     }
-
     setOrcamento((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -98,8 +130,17 @@ export default function NovoOrcamento() {
         if (item.id !== id) return item;
         let updatedItem = { ...item, [field]: value };
 
+        // REGRA DE OURO DA ÁREA MANUAL VS AUTOMÁTICA
+        if (field === 'largura' || field === 'altura') {
+          updatedItem.areaManual = ''; // Se mexeu nas dimensões, anula a área manual anterior
+        }
+
+        if (field === 'areaManual' && value !== '') {
+          updatedItem.largura = ''; // Se digitou área manual, limpa dimensões automáticas
+          updatedItem.altura = '';
+        }
+
         if (field === 'produtoId') {
-          // Busca o produto pelo nome selecionado via datalist ou ID direto
           const prodCadastrado = produtos.find(
             (p) => p.nome === value || p.id === value
           );
@@ -127,6 +168,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
+          areaManual: '',
           precoUnitario: '',
         },
       ],
@@ -142,6 +184,16 @@ export default function NovoOrcamento() {
       ...prev,
       itens: prev.itens.filter((item) => item.id !== id),
     }));
+    setBuscaProduto((prev) => {
+      const n = { ...prev };
+      delete n[id];
+      return n;
+    });
+    setMostrarListaProduto((prev) => {
+      const n = { ...prev };
+      delete n[id];
+      return n;
+    });
   };
 
   const handleLimparOrcamento = () => {
@@ -153,7 +205,9 @@ export default function NovoOrcamento() {
       tipoPagamento: 'Pix',
       parcelamento: 'À vista',
       descontoReais: '',
+      descontoPorcentagem: '',
       acrescimoReais: '',
+      acrescimoPorcentagem: '',
       observacoes: '',
       itens: [
         {
@@ -162,6 +216,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
+          areaManual: '',
           precoUnitario: '',
         },
         {
@@ -170,6 +225,7 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
+          areaManual: '',
           precoUnitario: '',
         },
         {
@@ -178,12 +234,17 @@ export default function NovoOrcamento() {
           quantidade: 1,
           largura: '',
           altura: '',
+          areaManual: '',
           precoUnitario: '',
         },
       ],
     });
     setCustomPagamento('');
     setCustomParcelamento('');
+    setBuscaCliente('');
+    setBuscaProduto({});
+    setMostrarListaCliente(false);
+    setMostrarListaProduto({});
     setModalLimparOpen(false);
   };
 
@@ -191,22 +252,57 @@ export default function NovoOrcamento() {
     (c) => c.id === orcamento.clienteId || c.nome === orcamento.clienteId
   );
 
+  // --- FUNÇÃO LOCAL COESA PARA DETERMINAR A ÁREA DE CADA LINHA E EVITAR ERRO DE SINTAXE ---
+  const obterAreaDoItem = (item) => {
+    if (
+      item.areaManual !== undefined &&
+      item.areaManual !== null &&
+      item.areaManual !== ''
+    ) {
+      return parseFloat(item.areaManual) || 0;
+    }
+    // Se não tiver área manual, calcula usando o utilitário padrão pelas dimensões fornecidas
+    return calculateArea(item.largura, item.altura) || 0;
+  };
+
+  // CÁLCULO DOS TOTAIS BASEADOS NA ÁREA REAL DE USO
   const subtotalGeral = orcamento.itens.reduce((acc, item) => {
     const qtd = parseInt(item.quantidade) || 0;
     const preco = parseFloat(item.precoUnitario) || 0;
-    return acc + calculateItemTotal(qtd, preco, item.largura, item.altura);
+    const areaUso = obterAreaDoItem(item);
+
+    // Se houver área definida (seja por m² manual ou cálculo de L x C), multiplica por ela.
+    // Se a área for zero (como itens vendidos por unidade seca), calcula apenas Qtd * Preço.
+    const totalLinha = areaUso > 0 ? qtd * preco * areaUso : qtd * preco;
+    return acc + totalLinha;
   }, 0);
 
-  const valorDesconto = parseFloat(orcamento.descontoReais) || 0;
-  const valorAcrescimo = parseFloat(orcamento.acrescimoReais) || 0;
+  // Lógica de Desconto Cruzado (R$ ou %)
+  let valorDesconto = 0;
+  if (orcamento.descontoReais) {
+    valorDesconto = parseFloat(orcamento.descontoReais) || 0;
+  } else if (orcamento.descontoPorcentagem) {
+    const pct = parseFloat(orcamento.descontoPorcentagem) || 0;
+    valorDesconto = subtotalGeral * (pct / 100);
+  }
+
+  // Lógica de Acréscimo Cruzado (R$ ou %)
+  let valorAcrescimo = 0;
+  if (orcamento.acrescimoReais) {
+    valorAcrescimo = parseFloat(orcamento.acrescimoReais) || 0;
+  } else if (orcamento.acrescimoPorcentagem) {
+    const pct = parseFloat(orcamento.acrescimoPorcentagem) || 0;
+    valorAcrescimo = subtotalGeral * (pct / 100);
+  }
+
   const totalComModificadores = Math.max(
     0,
     subtotalGeral - valorDesconto + valorAcrescimo
   );
 
-  const porcentagemDesconto =
+  const porcentagemDescontoExibicao =
     subtotalGeral > 0 ? ((valorDesconto / subtotalGeral) * 100).toFixed(1) : 0;
-  const porcentagemAcrescimo =
+  const porcentagemAcrescimoExibicao =
     subtotalGeral > 0 ? ((valorAcrescimo / subtotalGeral) * 100).toFixed(1) : 0;
 
   const handleExportarPDF = () => {
@@ -219,7 +315,6 @@ export default function NovoOrcamento() {
     window.print();
   };
 
-  // Define os textos finais que vão sair no espelho do PDF
   const formaPagamentoFinal =
     orcamento.tipoPagamento === 'Outro'
       ? customPagamento
@@ -229,12 +324,16 @@ export default function NovoOrcamento() {
       ? customParcelamento
       : orcamento.parcelamento;
 
+  const clientesFiltrados = clientes.filter((c) =>
+    normalizarString(c.nome).includes(normalizarString(buscaCliente))
+  );
+
   return (
-    <div className='max-w-6xl mx-auto mt-2 space-y-4 last:pb-12'>
+    <div className='max-w-full w-full mx-auto mt-2 space-y-5 last:pb-12 text-base font-sans selection:bg-blue-100'>
       {/* CABEÇALHO */}
-      <div className='bg-custom-surface p-5 rounded-lg border border-custom-grid shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4 items-center print:hidden'>
-        <div className='flex items-center gap-4'>
-          <div className='h-20 w-20 rounded-lg flex items-center justify-center'>
+      <div className='bg-custom-surface p-6 rounded-lg border border-custom-grid shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4 items-center print:hidden'>
+        <div className='flex items-center gap-5'>
+          <div className='h-24 w-24 rounded-lg flex items-center justify-center bg-white p-1'>
             <img
               src={DADOS_EMPRESA.logotipoUrl}
               alt='Logo Empresa'
@@ -245,76 +344,91 @@ export default function NovoOrcamento() {
             />
           </div>
           <div>
-            <h2 className='font-bold text-base text-custom-main'>
+            <h2 className='font-bold text-xl text-custom-main mb-1'>
               {DADOS_EMPRESA.nome}
             </h2>
-            <p className='text-xs text-custom-muted'>
-              Celular: {DADOS_EMPRESA.celular}
+            <p className='text-sm text-custom-muted'>
+              <strong>Celular:</strong> {DADOS_EMPRESA.celular}
             </p>
-            <p className='text-xs text-custom-muted'>
-              E-mail: {DADOS_EMPRESA.email}
+            <p className='text-sm text-custom-muted'>
+              <strong>E-mail:</strong> {DADOS_EMPRESA.email}
             </p>
-            <p className='text-xs text-custom-muted'>
-              Endereço: {DADOS_EMPRESA.endereco}
+            <p className='text-sm text-custom-muted'>
+              <strong>Endereço:</strong> {DADOS_EMPRESA.endereco}
             </p>
-            <p className='text-xs text-custom-muted'>
-              CNPJ: {DADOS_EMPRESA.cnpj} | Insc. Est.: {DADOS_EMPRESA.insc}
+            <p className='text-sm text-custom-muted'>
+              <strong>CNPJ:</strong> {DADOS_EMPRESA.cnpj} |{' '}
+              <strong>Insc. Est.:</strong> {DADOS_EMPRESA.insc}
             </p>
           </div>
         </div>
-        <div className='flex md:justify-end gap-2'>
+        <div className='flex md:justify-end gap-3'>
           <button
             type='button'
             onClick={() => setModalLimparOpen(true)}
-            className='flex items-center gap-1.5 px-3 py-1.5 border border-custom-grid text-brand-danger bg-red-50 hover:bg-red-100 rounded-md text-sm font-medium transition-colors'
+            className='flex items-center gap-2 px-4 py-2 border border-custom-grid text-brand-danger bg-red-50 hover:bg-red-100 rounded-md text-base font-semibold transition-colors'
           >
-            <Trash2 size={16} /> Apagar Orçamento
+            <Trash2 size={18} /> Apagar Orçamento
           </button>
           <button
             type='button'
             onClick={handleExportarPDF}
-            className='flex items-center gap-1.5 px-4 py-1.5 btn-primary rounded-md text-sm font-medium transition-colors shadow-sm'
+            className='flex items-center gap-2 px-5 py-2 btn-primary rounded-md text-base font-semibold transition-colors shadow-sm'
           >
-            <Printer size={16} /> Gerar PDF / Imprimir
+            <Printer size={18} /> Gerar PDF / Imprimir
           </button>
         </div>
       </div>
 
       {/* METADADOS PRINCIPAIS */}
-      <div className='bg-custom-surface p-5 rounded-lg border border-custom-grid shadow-sm grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 print:hidden'>
-        <div className='md:col-span-2'>
-          <label className='block text-xs font-semibold text-custom-muted uppercase mb-1'>
+      <div className='bg-custom-surface p-6 rounded-lg border border-custom-grid shadow-sm grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 print:hidden'>
+        <div className='md:col-span-2 relative'>
+          <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
             Selecionar Cliente *
           </label>
           <input
-            list='lista-clientes'
-            name='clienteId'
-            value={
-              clientes.find((c) => c.id === orcamento.clienteId)?.nome ||
-              orcamento.clienteId
-            }
+            type='text'
+            value={buscaCliente}
             onChange={(e) => {
-              const valorDigitado = e.target.value;
-              const cliObj = clientes.find((c) => c.nome === valorDigitado);
-              handleMetaChange({
-                target: {
-                  name: 'clienteId',
-                  value: cliObj ? cliObj.id : valorDigitado,
-                },
-              });
+              const valor = e.target.value;
+              setBuscaCliente(valor);
+              setMostrarListaCliente(valor.length > 0);
+              if (!valor) {
+                handleMetaChange({ target: { name: 'clienteId', value: '' } });
+              }
+            }}
+            onFocus={() => {
+              if (buscaCliente.length > 0) setMostrarListaCliente(true);
+            }}
+            onBlur={() => {
+              setTimeout(() => setMostrarListaCliente(false), 200);
             }}
             placeholder='Digite para buscar o cliente...'
-            className='w-full px-2 py-1.5 border border-custom-grid rounded-md focus:outline-none text-sm bg-white capitalize'
+            className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none text-base bg-white capitalize'
           />
-          <datalist id='lista-clientes'>
-            {clientes.map((c) => (
-              <option key={c.id} value={c.nome} />
-            ))}
-          </datalist>
+          {mostrarListaCliente && clientesFiltrados.length > 0 && (
+            <div className='absolute z-50 w-full mt-1 bg-white border border-custom-grid rounded-md shadow-lg max-h-60 overflow-y-auto divide-y divide-gray-100'>
+              {clientesFiltrados.map((c) => (
+                <div
+                  key={c.id}
+                  onMouseDown={() => {
+                    setBuscaCliente(c.nome);
+                    setMostrarListaCliente(false);
+                    handleMetaChange({
+                      target: { name: 'clienteId', value: c.id },
+                    });
+                  }}
+                  className='px-4 py-2 hover:bg-blue-50 cursor-pointer text-base text-custom-main transition-colors capitalize'
+                >
+                  {c.nome}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
-          <label className='block text-xs font-semibold text-custom-muted uppercase mb-1'>
+          <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
             Data Emissão *
           </label>
           <input
@@ -322,12 +436,12 @@ export default function NovoOrcamento() {
             name='data'
             value={orcamento.data}
             onChange={handleMetaChange}
-            className='w-full px-2 py-1.5 border border-custom-grid rounded-md focus:outline-none text-sm'
+            className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none text-base bg-white'
           />
         </div>
 
         <div>
-          <label className='block text-xs font-semibold text-custom-muted uppercase mb-1'>
+          <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
             Venc. do Orçamento
           </label>
           <input
@@ -336,12 +450,12 @@ export default function NovoOrcamento() {
             value={orcamento.vencimento}
             onChange={handleMetaChange}
             onKeyDown={(e) => e.preventDefault()}
-            className='w-full px-2 py-1.5 border border-custom-grid rounded-md focus:outline-none text-sm cursor-pointer'
+            className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none text-base cursor-pointer bg-white'
           />
         </div>
 
         <div>
-          <label className='block text-xs font-semibold text-custom-muted uppercase mb-1'>
+          <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
             Prazo Entrega
           </label>
           <input
@@ -350,19 +464,19 @@ export default function NovoOrcamento() {
             value={orcamento.prazoEntrega}
             onChange={handleMetaChange}
             placeholder='Ex: 5 dias úteis'
-            className='w-full px-2 py-1.5 border border-custom-grid rounded-md focus:outline-none text-sm'
+            className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none text-base'
           />
         </div>
 
         <div>
-          <label className='block text-xs font-semibold text-custom-muted uppercase mb-1'>
+          <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
             Forma Pagamento
           </label>
           <select
             name='tipoPagamento'
             value={orcamento.tipoPagamento}
             onChange={handleMetaChange}
-            className='w-full px-2 py-1.5 border border-custom-grid rounded-md focus:outline-none text-sm bg-white'
+            className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none text-base bg-white'
           >
             <option value='Pix'>Pix</option>
             <option value='Dinheiro / Espécie'>Dinheiro / Espécie</option>
@@ -376,20 +490,20 @@ export default function NovoOrcamento() {
               value={customPagamento}
               onChange={(e) => setCustomPagamento(e.target.value)}
               placeholder='Qual forma?'
-              className='w-full mt-1.5 px-2 py-1 border border-custom-grid rounded text-sm focus:outline-none'
+              className='w-full mt-2 px-3 py-1.5 border border-custom-grid rounded text-base focus:outline-none'
             />
           )}
         </div>
 
         <div>
-          <label className='block text-xs font-semibold text-custom-muted uppercase mb-1'>
+          <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
             Parcelamento
           </label>
           <select
             name='parcelamento'
             value={orcamento.parcelamento}
             onChange={handleMetaChange}
-            className='w-full px-2 py-1.5 border border-custom-grid rounded-md focus:outline-none text-sm bg-white'
+            className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none text-base bg-white'
           >
             <option value='À vista'>À vista</option>
             {[...Array(11)].map((_, i) => (
@@ -405,15 +519,15 @@ export default function NovoOrcamento() {
               value={customParcelamento}
               onChange={(e) => setCustomParcelamento(e.target.value)}
               placeholder='Ex: 24x boleto'
-              className='w-full mt-1.5 px-2 py-1 border border-custom-grid rounded text-sm focus:outline-none'
+              className='w-full mt-2 px-3 py-1.5 border border-custom-grid rounded text-base focus:outline-none'
             />
           )}
         </div>
       </div>
 
-      {/* INFO CLIENTE */}
+      {/* INFO CLIENTE SELECIONADO */}
       {clienteSelecionado && (
-        <div className='bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-custom-main space-y-0.5 print:hidden capitalize'>
+        <div className='bg-blue-50 border border-blue-200 p-4 rounded-lg text-base text-custom-main space-y-1 print:hidden capitalize shadow-sm'>
           <p>
             <strong>Contato:</strong> {clienteSelecionado.contato1}{' '}
             {clienteSelecionado.email && (
@@ -427,37 +541,58 @@ export default function NovoOrcamento() {
           </p>
           <p>
             <strong>Endereço:</strong> {clienteSelecionado.logradouro}, Nº{' '}
-            {clienteSelecionado.numero} - Bairro: {clienteSelecionado.bairro}
+            {clienteSelecionado.numero}
+            {clienteSelecionado.complemento &&
+              ` - Compl.: ${clienteSelecionado.complemento}`}{' '}
+            - Bairro: {clienteSelecionado.bairro}
           </p>
         </div>
       )}
 
       {/* TABELA DE ITENS */}
       <div className='bg-custom-surface rounded-lg border border-custom-grid shadow-sm overflow-x-auto print:hidden'>
-        <table className='w-full text-left border-collapse min-w-[800px]'>
+        <table className='w-full text-left border-collapse min-w-[950px]'>
           <thead>
-            <tr className='bg-gray-50 border-b border-custom-grid text-xs font-semibold text-custom-muted uppercase tracking-wider'>
-              <th className='py-2.5 px-3 w-12 text-center'>Item</th>
-              <th className='py-2.5 px-2 w-64'>Produto *</th>
-              <th className='py-2.5 px-2 w-20'>Qtd *</th>
-              <th className='py-2.5 px-2 w-20'>Larg (m)</th>
-              <th className='py-2.5 px-2 w-20'>Comp (m)</th>
-              <th className='py-2.5 px-2 w-24 text-center'>Área (m²)</th>
-              <th className='py-2.5 px-2 w-28 text-center'>Preço Unit.</th>
-              <th className='py-2.5 px-2 w-32 text-center'>Total Item</th>
-              <th className='py-2.5 px-3 w-12 text-center'></th>
+            <tr className='bg-gray-50 border-b border-custom-grid text-sm font-bold text-custom-muted uppercase tracking-wider'>
+              <th className='py-3 px-4 w-14 text-center'>Item</th>
+              <th className='py-3 px-3 w-72'>Produto *</th>
+              <th className='py-3 px-3 w-24'>Qtd *</th>
+              <th className='py-3 px-3 w-24'>Larg (m)</th>
+              <th className='py-3 px-3 w-24'>Comp (m)</th>
+              <th className='py-3 px-3 w-28 text-center'>Área (m²) *</th>
+              <th className='py-3 px-3 w-32 text-center'>Preço Unit.</th>
+              <th className='py-3 px-3 w-36 text-center'>Total Item</th>
+              <th className='py-3 px-4 w-14 text-center'></th>
             </tr>
           </thead>
-          <tbody className='divide-y divide-custom-grid text-sm'>
+          <tbody className='divide-y divide-custom-grid text-base'>
             {orcamento.itens.map((item, index) => {
-              const area = calculateArea(item.largura, item.altura);
+              // Descobre o valor real da área para a interface gráfica
+              const areaUso = obterAreaDoItem(item);
+              const valorAreaExibido =
+                item.areaManual !== ''
+                  ? item.areaManual
+                  : areaUso > 0
+                    ? areaUso.toFixed(2)
+                    : '';
+
               const qtd = parseInt(item.quantidade) || 0;
               const preco = parseFloat(item.precoUnitario) || 0;
-              const totalItem = calculateItemTotal(
-                qtd,
-                preco,
-                item.largura,
-                item.altura
+
+              // PREÇO DO ITEM CORRIGIDO PARA REALIZAR A MULTIPLICAÇÃO INTERNA DIRETAMENTE
+              const totalItem =
+                areaUso > 0 ? qtd * preco * areaUso : qtd * preco;
+
+              const termoBuscaProd =
+                buscaProduto[item.id] !== undefined
+                  ? buscaProduto[item.id]
+                  : produtos.find((p) => p.id === item.produtoId)?.nome ||
+                    item.produtoId;
+
+              const produtosFiltrados = produtos.filter((p) =>
+                normalizarString(p.nome).includes(
+                  normalizarString(termoBuscaProd)
+                )
               );
 
               return (
@@ -465,29 +600,69 @@ export default function NovoOrcamento() {
                   key={item.id}
                   className='hover:bg-gray-50/70 transition-colors'
                 >
-                  <td className='py-2 px-3 text-center font-medium text-custom-muted'>
+                  <td className='py-3 px-4 text-center font-semibold text-custom-muted'>
                     {index + 1}
                   </td>
-                  <td className='py-1 px-2'>
+                  <td className='py-2 px-3 relative'>
                     <input
-                      list={`lista-produtos-${item.id}`}
-                      value={
-                        produtos.find((p) => p.id === item.produtoId)?.nome ||
-                        item.produtoId
-                      }
-                      onChange={(e) =>
-                        handleItemChange(item.id, 'produtoId', e.target.value)
-                      }
+                      type='text'
+                      value={termoBuscaProd}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        setBuscaProduto((prev) => ({
+                          ...prev,
+                          [item.id]: valor,
+                        }));
+                        setMostrarListaProduto((prev) => ({
+                          ...prev,
+                          [item.id]: valor.length > 0,
+                        }));
+                        handleItemChange(item.id, 'produtoId', valor);
+                      }}
+                      onFocus={() => {
+                        if (termoBuscaProd.length > 0)
+                          setMostrarListaProduto((prev) => ({
+                            ...prev,
+                            [item.id]: true,
+                          }));
+                      }}
+                      onBlur={() => {
+                        setTimeout(() => {
+                          setMostrarListaProduto((prev) => ({
+                            ...prev,
+                            [item.id]: false,
+                          }));
+                        }, 200);
+                      }}
                       placeholder='Buscar produto...'
-                      className='w-full px-2 py-1 border border-custom-grid rounded focus:outline-none text-sm bg-white capitalize'
+                      className='w-full px-3 py-1.5 border border-custom-grid rounded focus:outline-none text-base bg-white capitalize'
                     />
-                    <datalist id={`lista-produtos-${item.id}`}>
-                      {produtos.map((p) => (
-                        <option key={p.id} value={p.nome} />
-                      ))}
-                    </datalist>
+                    {mostrarListaProduto[item.id] &&
+                      produtosFiltrados.length > 0 && (
+                        <div className='absolute z-50 w-[calc(100%-24px)] mt-1 bg-white border border-custom-grid rounded shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100'>
+                          {produtosFiltrados.map((p) => (
+                            <div
+                              key={p.id}
+                              onMouseDown={() => {
+                                setBuscaProduto((prev) => ({
+                                  ...prev,
+                                  [item.id]: p.nome,
+                                }));
+                                setMostrarListaProduto((prev) => ({
+                                  ...prev,
+                                  [item.id]: false,
+                                }));
+                                handleItemChange(item.id, 'produtoId', p.id);
+                              }}
+                              className='px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm text-custom-main transition-colors capitalize'
+                            >
+                              {p.nome} ({p.grandeza || 'unid.'})
+                            </div>
+                          ))}
+                        </div>
+                      )}
                   </td>
-                  <td className='py-1 px-2'>
+                  <td className='py-2 px-3'>
                     <input
                       type='number'
                       min='1'
@@ -499,10 +674,10 @@ export default function NovoOrcamento() {
                           parseInt(e.target.value) || 0
                         )
                       }
-                      className='w-full px-2 py-1 border border-custom-grid rounded focus:outline-none text-sm'
+                      className='w-full px-3 py-1.5 border border-custom-grid rounded focus:outline-none text-base'
                     />
                   </td>
-                  <td className='py-1 px-2'>
+                  <td className='py-2 px-3'>
                     <input
                       type='number'
                       step='0.01'
@@ -512,10 +687,10 @@ export default function NovoOrcamento() {
                       onChange={(e) =>
                         handleItemChange(item.id, 'largura', e.target.value)
                       }
-                      className='w-full px-2 py-1 border border-custom-grid rounded focus:outline-none text-sm'
+                      className='w-full px-3 py-1.5 border border-custom-grid rounded focus:outline-none text-base'
                     />
                   </td>
-                  <td className='py-1 px-2'>
+                  <td className='py-2 px-3'>
                     <input
                       type='number'
                       step='0.01'
@@ -525,19 +700,26 @@ export default function NovoOrcamento() {
                       onChange={(e) =>
                         handleItemChange(item.id, 'altura', e.target.value)
                       }
-                      className='w-full px-2 py-1 border border-custom-grid rounded focus:outline-none text-sm'
+                      className='w-full px-3 py-1.5 border border-custom-grid rounded focus:outline-none text-base'
                     />
                   </td>
-                  <td className='py-1 px-2 text-center font-medium text-custom-muted'>
-                    {area ? (
-                      `${area} m²`
-                    ) : (
-                      <span className='text-gray-300'>-</span>
-                    )}
+                  {/* Campo de área editável inteligente */}
+                  <td className='py-2 px-3'>
+                    <input
+                      type='number'
+                      step='0.01'
+                      min='0'
+                      placeholder='0.00'
+                      value={valorAreaExibido}
+                      onChange={(e) =>
+                        handleItemChange(item.id, 'areaManual', e.target.value)
+                      }
+                      className='w-full px-2 py-1.5 border border-custom-grid rounded focus:outline-none text-base text-center font-semibold bg-white'
+                    />
                   </td>
-                  <td className='py-1 px-2'>
-                    <div className='relative min-w-[100px]'>
-                      <span className='absolute inset-y-0 left-0 pl-2 flex items-center text-xs font-semibold text-custom-muted'>
+                  <td className='py-2 px-3'>
+                    <div className='relative min-w-[110px]'>
+                      <span className='absolute inset-y-0 left-0 pl-2.5 flex items-center text-sm font-bold text-custom-muted'>
                         R$
                       </span>
                       <input
@@ -553,23 +735,23 @@ export default function NovoOrcamento() {
                             e.target.value
                           )
                         }
-                        className='w-full pl-7 pr-1 py-1 border border-custom-grid rounded focus:outline-none text-sm font-medium text-center'
+                        className='w-full pl-8 pr-1 py-1.5 border border-custom-grid rounded focus:outline-none text-base font-semibold text-center'
                       />
                     </div>
                   </td>
-                  <td className='py-1 px-2 text-center font-bold text-custom-main'>
+                  <td className='py-2 px-3 text-center font-bold text-custom-main'>
                     R${' '}
                     {totalItem.toLocaleString('pt-BR', {
                       minimumFractionDigits: 2,
                     })}
                   </td>
-                  <td className='py-1 px-3 text-center'>
+                  <td className='py-2 px-4 text-center'>
                     <button
                       type='button'
                       onClick={() => removerLinha(item.id)}
-                      className='p-1 text-gray-400 hover:text-brand-danger rounded transition-colors'
+                      className='p-1.5 text-gray-400 hover:text-brand-danger rounded transition-colors'
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={18} />
                     </button>
                   </td>
                 </tr>
@@ -577,27 +759,28 @@ export default function NovoOrcamento() {
             })}
           </tbody>
         </table>
-        <div className='p-2 bg-gray-50 border-t border-custom-grid'>
+        <div className='p-3 bg-gray-50 border-t border-custom-grid'>
           <button
             type='button'
             onClick={adicionarLinha}
-            className='text-xs font-bold text-brand-primary uppercase tracking-wider bg-white px-2.5 py-1 border border-custom-grid rounded shadow-sm transition-colors'
+            className='text-xs font-bold text-brand-primary uppercase tracking-wider bg-white px-3 py-1.5 border border-custom-grid rounded shadow-sm transition-colors'
           >
             + Adicionar Linha
           </button>
         </div>
       </div>
 
-      {/* DESCONTO, ACRÉSCIMO E OBSERVAÇÕES */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 print:hidden'>
-        <div className='bg-custom-surface p-4 rounded-lg border border-custom-grid shadow-sm space-y-3'>
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-            <div>
-              <label className='block text-xs font-semibold text-custom-muted uppercase mb-1'>
-                Conceder Desconto (R$)
-              </label>
+      {/* REAJUSTES E OBSERVAÇÕES */}
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-5 print:hidden'>
+        <div className='bg-custom-surface p-5 rounded-lg border border-custom-grid shadow-sm space-y-4'>
+          {/* SEÇÃO DE DESCONTO EXCLUSIVO */}
+          <div className='border-b border-gray-100 pb-3'>
+            <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+              Conceder Desconto
+            </label>
+            <div className='grid grid-cols-2 gap-3'>
               <div className='relative'>
-                <span className='absolute inset-y-0 left-0 pl-2.5 flex items-center text-sm font-semibold text-custom-muted'>
+                <span className='absolute inset-y-0 left-0 pl-3 flex items-center text-base font-bold text-custom-muted'>
                   R$
                 </span>
                 <input
@@ -605,29 +788,55 @@ export default function NovoOrcamento() {
                   step='0.01'
                   min='0'
                   value={orcamento.descontoReais}
+                  disabled={!!orcamento.descontoPorcentagem}
                   onChange={(e) =>
                     setOrcamento((prev) => ({
                       ...prev,
                       descontoReais: e.target.value,
                     }))
                   }
-                  placeholder='0.00'
-                  className='w-full pl-8 pr-2 py-1.5 border border-custom-grid rounded-md focus:outline-none text-sm font-medium'
+                  placeholder='Valor em R$'
+                  className='w-full pl-9 pr-3 py-2 border border-custom-grid rounded-md focus:outline-none text-base font-medium disabled:bg-gray-100 disabled:text-gray-400'
                 />
               </div>
-              {valorDesconto > 0 && (
-                <p className='text-[11px] text-brand-success font-semibold mt-0.5'>
-                  Abatimento de {porcentagemDesconto}%
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className='block text-xs font-semibold text-custom-muted uppercase mb-1'>
-                Adicionar Acréscimo/Taxa (R$)
-              </label>
               <div className='relative'>
-                <span className='absolute inset-y-0 left-0 pl-2.5 flex items-center text-sm font-semibold text-custom-muted'>
+                <span className='absolute inset-y-0 right-0 pr-3 flex items-center text-base font-bold text-custom-muted'>
+                  %
+                </span>
+                <input
+                  type='number'
+                  step='0.1'
+                  min='0'
+                  max='100'
+                  value={orcamento.descontoPorcentagem}
+                  disabled={!!orcamento.descontoReais}
+                  onChange={(e) =>
+                    setOrcamento((prev) => ({
+                      ...prev,
+                      descontoPorcentagem: e.target.value,
+                    }))
+                  }
+                  placeholder='Porcentagem %'
+                  className='w-full pl-3 pr-8 py-2 border border-custom-grid rounded-md focus:outline-none text-base font-medium disabled:bg-gray-100 disabled:text-gray-400'
+                />
+              </div>
+            </div>
+            {valorDesconto > 0 && (
+              <p className='text-xs text-brand-success font-bold mt-1'>
+                Abatimento total de {porcentagemDescontoExibicao}% (- R${' '}
+                {valorDesconto.toFixed(2)})
+              </p>
+            )}
+          </div>
+
+          {/* SEÇÃO DE ACRESCIMO EXCLUSIVO */}
+          <div className='border-b border-gray-100 pb-2'>
+            <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
+              Adicionar Acréscimo / Taxa
+            </label>
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='relative'>
+                <span className='absolute inset-y-0 left-0 pl-3 flex items-center text-base font-bold text-custom-muted'>
                   R$
                 </span>
                 <input
@@ -635,45 +844,67 @@ export default function NovoOrcamento() {
                   step='0.01'
                   min='0'
                   value={orcamento.acrescimoReais}
+                  disabled={!!orcamento.acrescimoPorcentagem}
                   onChange={(e) =>
                     setOrcamento((prev) => ({
                       ...prev,
                       acrescimoReais: e.target.value,
                     }))
                   }
-                  placeholder='0.00'
-                  className='w-full pl-8 pr-2 py-1.5 border border-custom-grid rounded-md focus:outline-none text-sm font-medium'
+                  placeholder='Valor em R$'
+                  className='w-full pl-9 pr-3 py-2 border border-custom-grid rounded-md focus:outline-none text-base font-medium disabled:bg-gray-100 disabled:text-gray-400'
                 />
               </div>
-              {valorAcrescimo > 0 && (
-                <p className='text-[11px] text-brand-danger font-semibold mt-0.5'>
-                  Acréscimo de {porcentagemAcrescimo}%
-                </p>
-              )}
+              <div className='relative'>
+                <span className='absolute inset-y-0 right-0 pr-3 flex items-center text-base font-bold text-custom-muted'>
+                  %
+                </span>
+                <input
+                  type='number'
+                  step='0.1'
+                  min='0'
+                  value={orcamento.acrescimoPorcentagem}
+                  disabled={!!orcamento.acrescimoReais}
+                  onChange={(e) =>
+                    setOrcamento((prev) => ({
+                      ...prev,
+                      acrescimoPorcentagem: e.target.value,
+                    }))
+                  }
+                  placeholder='Porcentagem %'
+                  className='w-full pl-3 pr-8 py-2 border border-custom-grid rounded-md focus:outline-none text-base font-medium disabled:bg-gray-100 disabled:text-gray-400'
+                />
+              </div>
             </div>
+            {valorAcrescimo > 0 && (
+              <p className='text-xs text-brand-danger font-bold mt-1'>
+                Acréscimo total de {porcentagemAcrescimoExibicao}% (+ R${' '}
+                {valorAcrescimo.toFixed(2)})
+              </p>
+            )}
           </div>
 
           <div>
-            <label className='block text-xs font-semibold text-custom-muted uppercase mb-1'>
+            <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
               Observações do Orçamento{' '}
-              <span className='text-[10px] text-gray-400'>(Opcional)</span>
+              <span className='text-xs text-gray-400'>(Opcional)</span>
             </label>
             <textarea
               name='observacoes'
-              rows='2'
+              rows='3'
               value={orcamento.observacoes}
               onChange={handleMetaChange}
-              placeholder='Ex: Informações adicionais sobre entrega, garantia ou dados bancários...'
-              className='w-full px-2 py-1.5 border border-custom-grid rounded-md focus:outline-none text-sm resize-none'
+              placeholder='Ex: Informações adicionais...'
+              className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none text-base resize-none'
             />
           </div>
         </div>
 
-        <div className='bg-custom-surface p-4 rounded-lg border border-custom-grid shadow-sm space-y-2 text-sm justify-between flex flex-col'>
-          <div className='space-y-1.5'>
-            <div className='flex justify-between text-custom-muted'>
+        <div className='bg-custom-surface p-5 rounded-lg border border-custom-grid shadow-sm space-y-3 justify-between flex flex-col'>
+          <div className='space-y-2'>
+            <div className='flex justify-between text-custom-muted text-base'>
               <span>Subtotal Bruto:</span>
-              <span className='font-semibold'>
+              <span className='font-bold'>
                 R${' '}
                 {subtotalGeral.toLocaleString('pt-BR', {
                   minimumFractionDigits: 2,
@@ -681,9 +912,9 @@ export default function NovoOrcamento() {
               </span>
             </div>
             {valorDesconto > 0 && (
-              <div className='flex justify-between text-brand-danger'>
+              <div className='flex justify-between text-brand-danger text-base'>
                 <span>Desconto Aplicado:</span>
-                <span className='font-semibold'>
+                <span className='font-bold'>
                   - R${' '}
                   {valorDesconto.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
@@ -692,9 +923,9 @@ export default function NovoOrcamento() {
               </div>
             )}
             {valorAcrescimo > 0 && (
-              <div className='flex justify-between text-brand-main'>
+              <div className='flex justify-between text-brand-main text-base'>
                 <span>Acréscimo Adicionado:</span>
-                <span className='font-semibold'>
+                <span className='font-bold'>
                   + R${' '}
                   {valorAcrescimo.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
@@ -703,9 +934,9 @@ export default function NovoOrcamento() {
               </div>
             )}
           </div>
-          <div className='flex justify-between text-base font-bold text-custom-main pt-2 border-t border-custom-grid items-end'>
+          <div className='flex justify-between text-lg font-bold text-custom-main pt-3 border-t border-custom-grid items-end'>
             <span>TOTAL LÍQUIDO:</span>
-            <span className='text-xl text-brand-success'>
+            <span className='text-2xl text-brand-success'>
               R${' '}
               {totalComModificadores.toLocaleString('pt-BR', {
                 minimumFractionDigits: 2,
@@ -774,7 +1005,9 @@ export default function NovoOrcamento() {
               </p>
               <p>
                 <strong>Endereço Completo:</strong>{' '}
-                {clienteSelecionado.logradouro}, Nº {clienteSelecionado.numero}{' '}
+                {clienteSelecionado.logradouro}, Nº {clienteSelecionado.numero}
+                {clienteSelecionado.complemento &&
+                  ` , Compl.: ${clienteSelecionado.complemento}`}{' '}
                 - Bairro: {clienteSelecionado.bairro}
               </p>
             </>
@@ -788,7 +1021,7 @@ export default function NovoOrcamento() {
             <tr className='bg-gray-200 border-b border-black font-bold uppercase text-[10px]'>
               <th className='border border-black p-1.5 w-8 text-center'>Nº</th>
               <th className='border border-black p-1.5'>
-                Discriminação do Produto / Serviço
+                DESCRIÇÃO DO PRODUTO / SERVIÇO
               </th>
               <th className='border border-black p-1.5 w-12 text-center'>
                 Qtd
@@ -813,15 +1046,12 @@ export default function NovoOrcamento() {
           <tbody>
             {orcamento.itens.map((item, index) => {
               const prod = produtos.find((p) => p.id === item.produtoId);
-              const area = calculateArea(item.largura, item.altura);
+              const areaUso = obterAreaDoItem(item);
+
               const qtd = parseInt(item.quantidade) || 0;
               const preco = parseFloat(item.precoUnitario) || 0;
-              const totalItem = calculateItemTotal(
-                qtd,
-                preco,
-                item.largura,
-                item.altura
-              );
+              const totalItem =
+                areaUso > 0 ? qtd * preco * areaUso : qtd * preco;
 
               return (
                 <tr key={item.id} className='border-b border-gray-400'>
@@ -833,7 +1063,7 @@ export default function NovoOrcamento() {
                       prod.nome
                     ) : (
                       <span className='text-gray-400 italic'>
-                        Não especificado
+                        {item.produtoId || 'Não especificado'}
                       </span>
                     )}
                   </td>
@@ -847,7 +1077,7 @@ export default function NovoOrcamento() {
                     {item.altura || '-'}
                   </td>
                   <td className='border border-black p-1.5 text-center'>
-                    {area ? `${area} m²` : '-'}
+                    {areaUso > 0 ? `${areaUso.toFixed(2)} m²` : '-'}
                   </td>
                   <td className='border border-black p-1.5 text-center'>
                     R${' '}
@@ -875,7 +1105,7 @@ export default function NovoOrcamento() {
               </p>
               <p>
                 <strong>Prazo de Entrega:</strong>{' '}
-                {orcamento.prazoEntrega || 'A combiner'}
+                {orcamento.prazoEntrega || 'A combinar'}
               </p>
               <p>
                 <strong>Forma de Pagamento:</strong>{' '}
@@ -954,24 +1184,37 @@ export default function NovoOrcamento() {
         </div>
       </div>
 
-      {/* BLOCO DE ASSINATURAS NO PDF */}
-      <div className='mt-8 grid grid-cols-2 gap-6 text-center print:grid print:grid-cols-2 print:gap-6'>
-        <div className='flex flex-col items-center justify-end h-16'>
+      {/* BLOCO DE ASSINATURAS NO PDF - OCULTO NA TELA, VISÍVEL APENAS NA IMPRESSÃO/PDF */}
+      <div className='hidden print:grid print:grid-cols-2 print:gap-6 mt-4 text-center'>
+        {/* ASSINATURA EMITENTE */}
+        <div className='flex flex-col items-center mt-12 w-full'>
           <div className='w-full border-t border-black max-w-[280px]'></div>
-          <p className='text-[10px] font-bold uppercase tracking-wide mt-1 text-gray-700'>
+          <p className='text-[10px] font-bold uppercase tracking-wide mt-1 text-gray-700 leading-tight text-center max-w-[280px]'>
             {DADOS_EMPRESA.nome}
           </p>
-          <p className='text-[9px] text-gray-500 font-normal'>Emitente</p>
+          <p className='text-[9px] text-gray-500 font-normal leading-tight text-center'>
+            Emitente
+          </p>
         </div>
 
-        <div className='flex flex-col items-center justify-end h-16'>
+        {/* ASSINATURA CLIENTE */}
+        <div className='flex flex-col items-center mt-12 w-full'>
           <div className='w-full border-t border-black max-w-[280px]'></div>
-          <p className='text-[10px] font-bold uppercase tracking-wide mt-1 text-gray-700 truncate max-w-[280px]'>
+          <p
+            className='text-[10px] font-bold uppercase tracking-wide mt-1 text-gray-700 truncate max-w-[280px] leading-tight text-center'
+            title={
+              clienteSelecionado
+                ? clienteSelecionado.nome
+                : 'Assinatura do Cliente'
+            }
+          >
             {clienteSelecionado
               ? clienteSelecionado.nome
               : 'Assinatura do Cliente'}
           </p>
-          <p className='text-[9px] text-gray-500 font-normal'>Cliente</p>
+          <p className='text-[9px] text-gray-500 font-normal leading-tight text-center'>
+            Cliente
+          </p>
         </div>
       </div>
 
