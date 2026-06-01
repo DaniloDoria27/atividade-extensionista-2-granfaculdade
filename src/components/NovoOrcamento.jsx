@@ -27,6 +27,11 @@ export default function NovoOrcamento() {
   const [clientes, setClientes] = useState([]);
   const [produtos, setProdutos] = useState([]);
   const [modalLimparOpen, setModalLimparOpen] = useState(false);
+  const [modalAvisoOpen, setModalAvisoOpen] = useState(false);
+
+  // --- NOVOS ESTADOS DOS MODAIS ---
+  const [modalSemClienteOpen, setModalSemClienteOpen] = useState(false);
+  const [modalDataVencimentoOpen, setModalDataVencimentoOpen] = useState(false);
 
   const [customPagamento, setCustomPagamento] = useState('');
   const [customParcelamento, setCustomParcelamento] = useState('');
@@ -35,7 +40,6 @@ export default function NovoOrcamento() {
   const [mostrarListaCliente, setMostrarListaCliente] = useState(false);
   const [buscaProduto, setBuscaProduto] = useState({});
   const [mostrarListaProduto, setMostrarListaProduto] = useState({});
-  const [modalAvisoOpen, setModalAvisoOpen] = useState(false);
 
   const [orcamento, setOrcamento] = useState(() => {
     const salvo = localStorage.getItem('mvp_orcamento_corrente');
@@ -115,9 +119,8 @@ export default function NovoOrcamento() {
     const { name, value } = e.target;
     if (name === 'vencimento' && value) {
       if (value < orcamento.data) {
-        alert(
-          'A data de vencimento não pode ser anterior à data de emissão do orçamento!'
-        );
+        // SUBSTITUÍDO: alert → modal customizado
+        setModalDataVencimentoOpen(true);
         setOrcamento((prev) => ({ ...prev, vencimento: '' }));
         return;
       }
@@ -131,13 +134,12 @@ export default function NovoOrcamento() {
         if (item.id !== id) return item;
         let updatedItem = { ...item, [field]: value };
 
-        // REGRA DE OURO DA ÁREA MANUAL VS AUTOMÁTICA
         if (field === 'largura' || field === 'altura') {
-          updatedItem.areaManual = ''; // Se mexeu nas dimensões, anula a área manual anterior
+          updatedItem.areaManual = '';
         }
 
         if (field === 'areaManual' && value !== '') {
-          updatedItem.largura = ''; // Se digitou área manual, limpa dimensões automáticas
+          updatedItem.largura = '';
           updatedItem.altura = '';
         }
 
@@ -178,11 +180,8 @@ export default function NovoOrcamento() {
 
   const removerLinha = (id) => {
     if (orcamento.itens.length <= 1) {
+      // SUBSTITUÍDO: alert → modal customizado (já existia, mas usava alert como fallback)
       setModalAvisoOpen(true);
-      return;
-    }
-    if (orcamento.itens.length <= 1) {
-      alert('O orçamento deve conter pelo menos 1 item.');
       return;
     }
     setOrcamento((prev) => ({
@@ -257,7 +256,6 @@ export default function NovoOrcamento() {
     (c) => c.id === orcamento.clienteId || c.nome === orcamento.clienteId
   );
 
-  // --- FUNÇÃO LOCAL COESA PARA DETERMINAR A ÁREA DE CADA LINHA E EVITAR ERRO DE SINTAXE ---
   const obterAreaDoItem = (item) => {
     if (
       item.areaManual !== undefined &&
@@ -266,23 +264,17 @@ export default function NovoOrcamento() {
     ) {
       return parseFloat(item.areaManual) || 0;
     }
-    // Se não tiver área manual, calcula usando o utilitário padrão pelas dimensões fornecidas
     return calculateArea(item.largura, item.altura) || 0;
   };
 
-  // CÁLCULO DOS TOTAIS BASEADOS NA ÁREA REAL DE USO
   const subtotalGeral = orcamento.itens.reduce((acc, item) => {
     const qtd = parseInt(item.quantidade) || 0;
     const preco = parseFloat(item.precoUnitario) || 0;
     const areaUso = obterAreaDoItem(item);
-
-    // Se houver área definida (seja por m² manual ou cálculo de L x C), multiplica por ela.
-    // Se a área for zero (como itens vendidos por unidade seca), calcula apenas Qtd * Preço.
     const totalLinha = areaUso > 0 ? qtd * preco * areaUso : qtd * preco;
     return acc + totalLinha;
   }, 0);
 
-  // Lógica de Desconto Cruzado (R$ ou %)
   let valorDesconto = 0;
   if (orcamento.descontoReais) {
     valorDesconto = parseFloat(orcamento.descontoReais) || 0;
@@ -291,7 +283,6 @@ export default function NovoOrcamento() {
     valorDesconto = subtotalGeral * (pct / 100);
   }
 
-  // Lógica de Acréscimo Cruzado (R$ ou %)
   let valorAcrescimo = 0;
   if (orcamento.acrescimoReais) {
     valorAcrescimo = parseFloat(orcamento.acrescimoReais) || 0;
@@ -312,9 +303,8 @@ export default function NovoOrcamento() {
 
   const handleExportarPDF = () => {
     if (!orcamento.clienteId) {
-      alert(
-        'Por favor, selecione um cliente antes de gerar o PDF do orçamento.'
-      );
+      // SUBSTITUÍDO: alert → modal customizado
+      setModalSemClienteOpen(true);
       return;
     }
     window.print();
@@ -572,7 +562,6 @@ export default function NovoOrcamento() {
           </thead>
           <tbody className='divide-y divide-custom-grid text-base'>
             {orcamento.itens.map((item, index) => {
-              // Descobre o valor real da área para a interface gráfica
               const areaUso = obterAreaDoItem(item);
               const valorAreaExibido =
                 item.areaManual !== ''
@@ -583,8 +572,6 @@ export default function NovoOrcamento() {
 
               const qtd = parseInt(item.quantidade) || 0;
               const preco = parseFloat(item.precoUnitario) || 0;
-
-              // PREÇO DO ITEM CORRIGIDO PARA REALIZAR A MULTIPLICAÇÃO INTERNA DIRETAMENTE
               const totalItem =
                 areaUso > 0 ? qtd * preco * areaUso : qtd * preco;
 
@@ -708,7 +695,6 @@ export default function NovoOrcamento() {
                       className='w-full px-3 py-1.5 border border-custom-grid rounded focus:outline-none text-base'
                     />
                   </td>
-                  {/* Campo de área editável inteligente */}
                   <td className='py-2 px-3'>
                     <input
                       type='number'
@@ -778,7 +764,6 @@ export default function NovoOrcamento() {
       {/* REAJUSTES E OBSERVAÇÕES */}
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-5 print:hidden'>
         <div className='bg-custom-surface p-5 rounded-lg border border-custom-grid shadow-sm space-y-4'>
-          {/* SEÇÃO DE DESCONTO EXCLUSIVO */}
           <div className='border-b border-gray-100 pb-3'>
             <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
               Conceder Desconto
@@ -834,7 +819,6 @@ export default function NovoOrcamento() {
             )}
           </div>
 
-          {/* SEÇÃO DE ACRESCIMO EXCLUSIVO */}
           <div className='border-b border-gray-100 pb-2'>
             <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
               Adicionar Acréscimo / Taxa
@@ -1189,9 +1173,8 @@ export default function NovoOrcamento() {
         </div>
       </div>
 
-      {/* BLOCO DE ASSINATURAS NO PDF - OCULTO NA TELA, VISÍVEL APENAS NA IMPRESSÃO/PDF */}
+      {/* BLOCO DE ASSINATURAS NO PDF */}
       <div className='hidden print:grid print:grid-cols-2 print:gap-6 mt-4 text-center'>
-        {/* ASSINATURA EMITENTE */}
         <div className='flex flex-col items-center mt-12 w-full'>
           <div className='w-full border-t border-black max-w-[280px]'></div>
           <p className='text-[10px] font-bold uppercase tracking-wide mt-1 text-gray-700 leading-tight text-center max-w-[280px]'>
@@ -1202,7 +1185,6 @@ export default function NovoOrcamento() {
           </p>
         </div>
 
-        {/* ASSINATURA CLIENTE */}
         <div className='flex flex-col items-center mt-12 w-full'>
           <div className='w-full border-t border-black max-w-[280px]'></div>
           <p
@@ -1223,6 +1205,11 @@ export default function NovoOrcamento() {
         </div>
       </div>
 
+      {/* ============================================================ */}
+      {/* MODAIS                                                        */}
+      {/* ============================================================ */}
+
+      {/* 1. Modal: Confirmar limpeza do orçamento */}
       <Modal
         isOpen={modalLimparOpen}
         title='Apagar e Zerar Orçamento'
@@ -1232,14 +1219,36 @@ export default function NovoOrcamento() {
         confirmText='Sim, apagar tudo'
         cancelText='Não, manter'
       />
-      {/* MODAL DE VALIDAÇÃO: MÍNIMO DE ITENS */}
+
+      {/* 2. Modal: Aviso de mínimo de 1 item na tabela */}
       <Modal
         isOpen={modalAvisoOpen}
         title='Atenção'
-        message='O orçamento deve conter pelo menos 1 item.'
-        onConfirm={() => setModalAvisoOpen(false)} // Fecha ao clicar no botão principal
-        confirmText='OK'
-        // Como é apenas um aviso impeditivo, omitimos ou desativamos o cancelamento se o seu componente Modal permitir
+        message='O orçamento deve conter pelo menos 1 item. Não é possível remover a última linha.'
+        onConfirm={() => setModalAvisoOpen(false)}
+        confirmText='Entendido'
+        cancelText={null}
+        onCancel={null}
+      />
+
+      {/* 3. Modal: Gerar PDF sem cliente selecionado */}
+      <Modal
+        isOpen={modalSemClienteOpen}
+        title='Cliente não selecionado'
+        message='Por favor, selecione um cliente antes de gerar o PDF do orçamento.'
+        onConfirm={() => setModalSemClienteOpen(false)}
+        confirmText='Entendido'
+        cancelText={null}
+        onCancel={null}
+      />
+
+      {/* 4. Modal: Data de vencimento inválida */}
+      <Modal
+        isOpen={modalDataVencimentoOpen}
+        title='Data de Vencimento Inválida'
+        message='A data de vencimento não pode ser anterior à data de emissão do orçamento.'
+        onConfirm={() => setModalDataVencimentoOpen(false)}
+        confirmText='Entendido'
         cancelText={null}
         onCancel={null}
       />

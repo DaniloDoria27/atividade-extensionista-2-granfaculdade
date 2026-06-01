@@ -1,9 +1,17 @@
 import { useState } from 'react';
 import { Download, Upload, ShieldCheck, AlertTriangle } from 'lucide-react';
+// Certifique-se de que o caminho do import do seu Modal está correto abaixo
+import Modal from '../components/Modal';
 
 export default function Backup() {
   const [mensagemStatus, setMensagemStatus] = useState('');
   const [tipoStatus, setTipoStatus] = useState(''); // 'sucesso' ou 'erro'
+
+  // Estado para gerenciar o Modal de confirmação do Backup e seus dados lidos
+  const [modalBackup, setModalBackup] = useState({
+    isOpen: false,
+    dados: null,
+  });
 
   // 1. FUNÇÃO PARA EXPORTAR (DOWNLOAD DO JSON)
   const exportarBackup = () => {
@@ -11,7 +19,6 @@ export default function Backup() {
       const clientes = JSON.parse(localStorage.getItem('mvp_clientes') || '[]');
       const produtos = JSON.parse(localStorage.getItem('mvp_produtos') || '[]');
 
-      // Estrutura o objeto de backup
       const dadosBackup = {
         sistema: 'MVP_Gerenciador',
         versao: '1.0',
@@ -20,12 +27,10 @@ export default function Backup() {
         produtos: produtos,
       };
 
-      // Transforma em texto JSON indentado
       const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
         JSON.stringify(dadosBackup, null, 2)
       )}`;
 
-      // Cria um link temporário na memória para forçar o download do Windows
       const downloadAnchor = document.createElement('a');
       const dataAtual = new Date()
         .toISOString()
@@ -52,8 +57,8 @@ export default function Backup() {
     }
   };
 
-  // 2. FUNÇÃO PARA IMPORTAR (LER E SALVAR NO LOCALSTORAGE)
-  const importarBackup = (e) => {
+  // 2. FUNÇÃO PARA ANALISAR O ARQUIVO (CHAMADA NO INPUT FILE)
+  const analisarArquivoBackup = (e) => {
     const arquivo = e.target.files[0];
     if (!arquivo) return;
 
@@ -73,29 +78,15 @@ export default function Backup() {
             'Arquivo inválido! O arquivo selecionado não é um backup compatível deste sistema.',
             'erro'
           );
-          e.target.value = ''; // Limpa o input
+          e.target.value = '';
           return;
         }
 
-        // Confirmação de segurança com o usuário
-        const confirmar = window.confirm(
-          `Atenção!\n\nEste arquivo contém:\n- ${dadosConvertidos.clientes.length} Clientes\n- ${dadosConvertidos.produtos.length} Produtos\n\nAo continuar, TODOS os dados atuais do seu sistema serão substituídos pelos do arquivo. Deseja prosseguir?`
-        );
-
-        if (confirmar) {
-          localStorage.setItem(
-            'mvp_clientes',
-            JSON.stringify(dadosConvertidos.clientes)
-          );
-          localStorage.setItem(
-            'mvp_produtos',
-            JSON.stringify(dadosConvertidos.produtos)
-          );
-          exibirStatus(
-            'Backup restaurado com sucesso! Os dados foram atualizados.',
-            'sucesso'
-          );
-        }
+        // Em vez do window.confirm, abre o Modal e salva os dados lidos no estado
+        setModalBackup({
+          isOpen: true,
+          dados: dadosConvertidos,
+        });
       } catch {
         exibirStatus(
           'Erro ao ler o arquivo JSON. Certifique-se de que o arquivo não está corrompido.',
@@ -106,6 +97,32 @@ export default function Backup() {
     };
 
     leitor.readAsText(arquivo);
+  };
+
+  // 3. FUNÇÃO QUE EXECUTA A RESTAURAÇÃO REAL (CHAMADA NO CONFIRMAR DO MODAL)
+  const confirmarRestauracao = () => {
+    if (!modalBackup.dados) return;
+
+    try {
+      localStorage.setItem(
+        'mvp_clientes',
+        JSON.stringify(modalBackup.dados.clientes)
+      );
+      localStorage.setItem(
+        'mvp_produtos',
+        JSON.stringify(modalBackup.dados.produtos)
+      );
+
+      exibirStatus(
+        'Backup restaurado com sucesso! Os dados foram atualizados.',
+        'sucesso'
+      );
+    } catch {
+      exibirStatus('Erro ao salvar os dados no sistema.', 'erro');
+    }
+
+    // Fecha o modal e limpa os dados temporários
+    setModalBackup({ isOpen: false, dados: null });
   };
 
   const exibirStatus = (mensagem, tipo) => {
@@ -189,12 +206,23 @@ export default function Backup() {
             <input
               type='file'
               accept='.json'
-              onChange={importarBackup}
+              onChange={analisarArquivoBackup}
               className='hidden'
             />
           </label>
         </div>
       </div>
+
+      {/* MODAL CUSTOMIZADO DE SUBSTITUIÇÃO DE BACKUP */}
+      <Modal
+        isOpen={modalBackup.isOpen}
+        title='Atenção!'
+        confirmText='OK'
+        cancelText='Cancelar'
+        onConfirm={confirmarRestauracao}
+        onCancel={() => setModalBackup({ isOpen: false, dados: null })}
+        message={`Este arquivo contém:\n- ${modalBackup.dados?.clientes?.length || 0} Clientes\n- ${modalBackup.dados?.produtos?.length || 0} Produtos\n\nAo continuar, TODOS os dados atuais do seu sistema serão substituídos pelos do arquivo. Deseja prosseguir?`}
+      />
     </div>
   );
 }
