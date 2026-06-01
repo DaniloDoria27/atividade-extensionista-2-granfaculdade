@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Trash2, Printer } from 'lucide-react';
 import { calculateArea } from '../utils/helpers';
 import Modal from './Modal';
 import logoEmpresa from '../img/logo.png';
+import { capitalizarNome } from '../utils/helpers';
 
 const DADOS_EMPRESA = {
   nome: 'RQL - Depósito e Marmoraria',
-  celular: '(98) 98524-7259 | 98906-8127',
+  celular: '(98) 98524-7259 |\n98906-8127',
   email: 'depositoemarmorariarql@outlook.com',
   logotipoUrl: logoEmpresa,
   cnpj: '41.505.286/0001-44',
@@ -28,11 +29,8 @@ export default function NovoOrcamento() {
   const [produtos, setProdutos] = useState([]);
   const [modalLimparOpen, setModalLimparOpen] = useState(false);
   const [modalAvisoOpen, setModalAvisoOpen] = useState(false);
-
-  // --- NOVOS ESTADOS DOS MODAIS ---
   const [modalSemClienteOpen, setModalSemClienteOpen] = useState(false);
   const [modalDataVencimentoOpen, setModalDataVencimentoOpen] = useState(false);
-
   const [customPagamento, setCustomPagamento] = useState('');
   const [customParcelamento, setCustomParcelamento] = useState('');
 
@@ -40,6 +38,14 @@ export default function NovoOrcamento() {
   const [mostrarListaCliente, setMostrarListaCliente] = useState(false);
   const [buscaProduto, setBuscaProduto] = useState({});
   const [mostrarListaProduto, setMostrarListaProduto] = useState({});
+
+  // NOVOS ESTADOS PARA CONTROLE DE NAVEGAÇÃO VIA TECLADO
+  const [indexFocoCliente, setIndexFocoCliente] = useState(-1);
+  const [indexFocoProduto, setIndexFocoProduto] = useState({}); // { [itemId]: index }
+
+  // Refs para gerenciar o scroll automático dos dropdowns
+  const listaClienteRef = useRef(null);
+  const listasProdutosRef = useRef({});
 
   const [orcamento, setOrcamento] = useState(() => {
     const salvo = localStorage.getItem('mvp_orcamento_corrente');
@@ -115,11 +121,20 @@ export default function NovoOrcamento() {
     localStorage.setItem('mvp_orcamento_corrente', JSON.stringify(orcamento));
   }, [orcamento]);
 
+  // Efeito para ajustar o scroll do dropdown de clientes quando navega com o teclado
+  useEffect(() => {
+    if (indexFocoCliente >= 0 && listaClienteRef.current) {
+      const elAtivo = listaClienteRef.current.children[indexFocoCliente];
+      if (elAtivo) {
+        elAtivo.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [indexFocoCliente]);
+
   const handleMetaChange = (e) => {
     const { name, value } = e.target;
     if (name === 'vencimento' && value) {
       if (value < orcamento.data) {
-        // SUBSTITUÍDO: alert → modal customizado
         setModalDataVencimentoOpen(true);
         setOrcamento((prev) => ({ ...prev, vencimento: '' }));
         return;
@@ -180,7 +195,6 @@ export default function NovoOrcamento() {
 
   const removerLinha = (id) => {
     if (orcamento.itens.length <= 1) {
-      // SUBSTITUÍDO: alert → modal customizado (já existia, mas usava alert como fallback)
       setModalAvisoOpen(true);
       return;
     }
@@ -194,6 +208,11 @@ export default function NovoOrcamento() {
       return n;
     });
     setMostrarListaProduto((prev) => {
+      const n = { ...prev };
+      delete n[id];
+      return n;
+    });
+    setIndexFocoProduto((prev) => {
       const n = { ...prev };
       delete n[id];
       return n;
@@ -249,6 +268,8 @@ export default function NovoOrcamento() {
     setBuscaProduto({});
     setMostrarListaCliente(false);
     setMostrarListaProduto({});
+    setIndexFocoCliente(-1);
+    setIndexFocoProduto({});
     setModalLimparOpen(false);
   };
 
@@ -295,7 +316,6 @@ export default function NovoOrcamento() {
     0,
     subtotalGeral - valorDesconto + valorAcrescimo
   );
-
   const porcentagemDescontoExibicao =
     subtotalGeral > 0 ? ((valorDesconto / subtotalGeral) * 100).toFixed(1) : 0;
   const porcentagemAcrescimoExibicao =
@@ -303,7 +323,6 @@ export default function NovoOrcamento() {
 
   const handleExportarPDF = () => {
     if (!orcamento.clienteId) {
-      // SUBSTITUÍDO: alert → modal customizado
       setModalSemClienteOpen(true);
       return;
     }
@@ -322,6 +341,96 @@ export default function NovoOrcamento() {
   const clientesFiltrados = clientes.filter((c) =>
     normalizarString(c.nome).includes(normalizarString(buscaCliente))
   );
+
+  // Lógica de manipulação de teclado para a escolha de Clientes
+  const handleKeyDownCliente = (e) => {
+    if (!mostrarListaCliente || clientesFiltrados.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setIndexFocoCliente((prev) =>
+        prev + (1 % clientesFiltrados.length) === 0 ? 0 : prev + 1
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setIndexFocoCliente((prev) =>
+        prev <= 0 ? clientesFiltrados.length - 1 : prev - 1
+      );
+    } else if (e.key === 'Enter') {
+      if (
+        indexFocoCliente >= 0 &&
+        indexFocoCliente < clientesFiltrados.length
+      ) {
+        e.preventDefault();
+        const clienteEscolhido = clientesFiltrados[indexFocoCliente];
+        setBuscaCliente(clienteEscolhido.nome);
+        setMostrarListaCliente(false);
+        handleMetaChange({
+          target: { name: 'clienteId', value: clienteEscolhido.id },
+        });
+        setIndexFocoCliente(-1);
+      }
+    } else if (e.key === 'Escape') {
+      setMostrarListaCliente(false);
+      setIndexFocoCliente(-1);
+    }
+  };
+
+  // Lógica de manipulação de teclado para a escolha de Produtos nas linhas da tabela
+  const handleKeyDownProduto = (e, itemId, listaFiltrada) => {
+    if (!mostrarListaProduto[itemId] || listaFiltrada.length === 0) return;
+
+    const indexAtual =
+      indexFocoProduto[itemId] !== undefined ? indexFocoProduto[itemId] : -1;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const proximoIndex =
+        indexAtual + 1 >= listaFiltrada.length ? 0 : indexAtual + 1;
+      setIndexFocoProduto((prev) => ({ ...prev, [itemId]: proximoIndex }));
+
+      // Ajusta o scroll do container do produto específico
+      setTimeout(() => {
+        const container = listasProdutosRef.current[itemId];
+        if (container) {
+          const elAtivo = container.children[proximoIndex];
+          if (elAtivo) elAtivo.scrollIntoView({ block: 'nearest' });
+        }
+      }, 10);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const proximoIndex =
+        indexAtual <= 0 ? listaFiltrada.length - 1 : indexAtual - 1;
+      setIndexFocoProduto((prev) => ({ ...prev, [itemId]: proximoIndex }));
+
+      // Ajusta o scroll do container do produto específico
+      setTimeout(() => {
+        const container = listasProdutosRef.current[itemId];
+        if (container) {
+          const elAtivo = container.children[proximoIndex];
+          if (elAtivo) elAtivo.scrollIntoView({ block: 'nearest' });
+        }
+      }, 10);
+    } else if (e.key === 'Enter') {
+      if (indexAtual >= 0 && indexAtual < listaFiltrada.length) {
+        e.preventDefault();
+        const prodEscolhido = listaFiltrada[indexAtual];
+        setBuscaProduto((prev) => ({
+          ...prev,
+          [itemId]: `${capitalizarNome(prodEscolhido.nome || prodEscolhido.name)} (${(prodEscolhido.grandeza || 'unid.').toLowerCase()})`,
+        }));
+        setMostrarListaProduto((prev) => ({
+          ...prev,
+          [itemId]: false,
+        }));
+        handleItemChange(itemId, 'produtoId', prodEscolhido.id);
+        setIndexFocoProduto((prev) => ({ ...prev, [itemId]: -1 }));
+      }
+    } else if (e.key === 'Escape') {
+      setMostrarListaProduto((prev) => ({ ...prev, [itemId]: false }));
+      setIndexFocoProduto((prev) => ({ ...prev, [itemId]: -1 }));
+    }
+  };
 
   return (
     <div className='max-w-full w-full mx-auto mt-2 space-y-5 last:pb-12 text-base font-sans selection:bg-blue-100'>
@@ -388,6 +497,7 @@ export default function NovoOrcamento() {
               const valor = e.target.value;
               setBuscaCliente(valor);
               setMostrarListaCliente(valor.length > 0);
+              setIndexFocoCliente(-1); // Reseta a posição no teclado ao digitar
               if (!valor) {
                 handleMetaChange({ target: { name: 'clienteId', value: '' } });
               }
@@ -396,14 +506,22 @@ export default function NovoOrcamento() {
               if (buscaCliente.length > 0) setMostrarListaCliente(true);
             }}
             onBlur={() => {
-              setTimeout(() => setMostrarListaCliente(false), 200);
+              // Timeout ligeiramente aumentado para garantir captura caso o clique ocorra fora
+              setTimeout(() => {
+                setMostrarListaCliente(false);
+                setIndexFocoCliente(-1);
+              }, 250);
             }}
+            onKeyDown={handleKeyDownCliente}
             placeholder='Digite para buscar o cliente...'
             className='w-full px-3 py-2 border border-custom-grid rounded-md focus:outline-none text-base bg-white capitalize'
           />
           {mostrarListaCliente && clientesFiltrados.length > 0 && (
-            <div className='absolute z-50 w-full mt-1 bg-white border border-custom-grid rounded-md shadow-lg max-h-60 overflow-y-auto divide-y divide-gray-100'>
-              {clientesFiltrados.map((c) => (
+            <div
+              ref={listaClienteRef}
+              className='absolute z-50 w-full mt-1 bg-white border border-custom-grid rounded-md shadow-lg max-h-60 overflow-y-auto divide-y divide-gray-100'
+            >
+              {clientesFiltrados.map((c, idx) => (
                 <div
                   key={c.id}
                   onMouseDown={() => {
@@ -412,8 +530,14 @@ export default function NovoOrcamento() {
                     handleMetaChange({
                       target: { name: 'clienteId', value: c.id },
                     });
+                    setIndexFocoCliente(-1);
                   }}
-                  className='px-4 py-2 hover:bg-blue-50 cursor-pointer text-base text-custom-main transition-colors capitalize'
+                  onMouseEnter={() => setIndexFocoCliente(idx)}
+                  className={`px-4 py-2 cursor-pointer text-base text-custom-main transition-colors capitalize ${
+                    idx === indexFocoCliente
+                      ? 'bg-blue-100 font-medium'
+                      : 'hover:bg-blue-50'
+                  }`}
                 >
                   {c.nome}
                 </div>
@@ -569,7 +693,6 @@ export default function NovoOrcamento() {
                   : areaUso > 0
                     ? areaUso.toFixed(2)
                     : '';
-
               const qtd = parseInt(item.quantidade) || 0;
               const preco = parseFloat(item.precoUnitario) || 0;
               const totalItem =
@@ -586,6 +709,11 @@ export default function NovoOrcamento() {
                   normalizarString(termoBuscaProd)
                 )
               );
+
+              const idFocoAtual =
+                indexFocoProduto[item.id] !== undefined
+                  ? indexFocoProduto[item.id]
+                  : -1;
 
               return (
                 <tr
@@ -609,6 +737,10 @@ export default function NovoOrcamento() {
                           ...prev,
                           [item.id]: valor.length > 0,
                         }));
+                        setIndexFocoProduto((prev) => ({
+                          ...prev,
+                          [item.id]: -1, // limpa index ao redigitar
+                        }));
                         handleItemChange(item.id, 'produtoId', valor);
                       }}
                       onFocus={() => {
@@ -624,31 +756,57 @@ export default function NovoOrcamento() {
                             ...prev,
                             [item.id]: false,
                           }));
-                        }, 200);
+                          setIndexFocoProduto((prev) => ({
+                            ...prev,
+                            [item.id]: -1,
+                          }));
+                        }, 250);
                       }}
+                      onKeyDown={(e) =>
+                        handleKeyDownProduto(e, item.id, produtosFiltrados)
+                      }
                       placeholder='Buscar produto...'
-                      className='w-full px-3 py-1.5 border border-custom-grid rounded focus:outline-none text-base bg-white capitalize'
+                      className='w-full px-3 py-1.5 border border-custom-grid rounded focus:outline-none text-base bg-white'
                     />
                     {mostrarListaProduto[item.id] &&
                       produtosFiltrados.length > 0 && (
-                        <div className='absolute z-50 w-[calc(100%-24px)] mt-1 bg-white border border-custom-grid rounded shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100'>
-                          {produtosFiltrados.map((p) => (
+                        <div
+                          ref={(el) =>
+                            (listasProdutosRef.current[item.id] = el)
+                          }
+                          className='absolute z-50 w-[calc(100%-24px)] mt-1 bg-white border border-custom-grid rounded shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100'
+                        >
+                          {produtosFiltrados.map((p, idx) => (
                             <div
                               key={p.id}
                               onMouseDown={() => {
                                 setBuscaProduto((prev) => ({
                                   ...prev,
-                                  [item.id]: p.nome,
+                                  [item.id]: `${capitalizarNome(p.nome)} (${(p.grandeza || 'unid.').toLowerCase()})`,
                                 }));
                                 setMostrarListaProduto((prev) => ({
                                   ...prev,
                                   [item.id]: false,
                                 }));
                                 handleItemChange(item.id, 'produtoId', p.id);
+                                setIndexFocoProduto((prev) => ({
+                                  ...prev,
+                                  [item.id]: -1,
+                                }));
                               }}
-                              className='px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm text-custom-main transition-colors capitalize'
+                              onMouseEnter={() =>
+                                setIndexFocoProduto((prev) => ({
+                                  ...prev,
+                                  [item.id]: idx,
+                                }))
+                              }
+                              className={`px-3 py-2 cursor-pointer text-sm text-custom-main transition-colors capitalize ${
+                                idx === idFocoAtual
+                                  ? 'bg-blue-100 font-medium'
+                                  : 'hover:bg-blue-50'
+                              }`}
                             >
-                              {p.nome} ({p.grandeza || 'unid.'})
+                              {p.nome} ({(p.grandeza || 'unid.').toLowerCase()})
                             </div>
                           ))}
                         </div>
@@ -1036,7 +1194,6 @@ export default function NovoOrcamento() {
             {orcamento.itens.map((item, index) => {
               const prod = produtos.find((p) => p.id === item.produtoId);
               const areaUso = obterAreaDoItem(item);
-
               const qtd = parseInt(item.quantidade) || 0;
               const preco = parseFloat(item.precoUnitario) || 0;
               const totalItem =
@@ -1049,7 +1206,13 @@ export default function NovoOrcamento() {
                   </td>
                   <td className='border border-black p-1.5 font-medium'>
                     {prod ? (
-                      prod.nome
+                      <>
+                        {prod.nome} (
+                        <span className='lowercase'>
+                          {(prod.grandeza || 'unid.').toLowerCase()}
+                        </span>
+                        )
+                      </>
                     ) : (
                       <span className='text-gray-400 italic'>
                         {item.produtoId || 'Não especificado'}
@@ -1205,11 +1368,7 @@ export default function NovoOrcamento() {
         </div>
       </div>
 
-      {/* ============================================================ */}
-      {/* MODAIS                                                        */}
-      {/* ============================================================ */}
-
-      {/* 1. Modal: Confirmar limpeza do orçamento */}
+      {/* MODAIS */}
       <Modal
         isOpen={modalLimparOpen}
         title='Apagar e Zerar Orçamento'
@@ -1220,35 +1379,32 @@ export default function NovoOrcamento() {
         cancelText='Não, manter'
       />
 
-      {/* 2. Modal: Aviso de mínimo de 1 item na tabela */}
       <Modal
         isOpen={modalAvisoOpen}
         title='Atenção'
         message='O orçamento deve conter pelo menos 1 item. Não é possível remover a última linha.'
         onConfirm={() => setModalAvisoOpen(false)}
-        confirmText='Entendido'
+        confirmText='Ok'
         cancelText={null}
         onCancel={null}
       />
 
-      {/* 3. Modal: Gerar PDF sem cliente selecionado */}
       <Modal
         isOpen={modalSemClienteOpen}
         title='Cliente não selecionado'
         message='Por favor, selecione um cliente antes de gerar o PDF do orçamento.'
         onConfirm={() => setModalSemClienteOpen(false)}
-        confirmText='Entendido'
+        confirmText='Ok'
         cancelText={null}
         onCancel={null}
       />
 
-      {/* 4. Modal: Data de vencimento inválida */}
       <Modal
         isOpen={modalDataVencimentoOpen}
         title='Data de Vencimento Inválida'
         message='A data de vencimento não pode ser anterior à data de emissão do orçamento.'
         onConfirm={() => setModalDataVencimentoOpen(false)}
-        confirmText='Entendido'
+        confirmText='Ok'
         cancelText={null}
         onCancel={null}
       />

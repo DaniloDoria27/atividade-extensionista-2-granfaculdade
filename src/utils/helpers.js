@@ -162,3 +162,11 @@ export const isValidDocument = (value, type) => {
   if (type === 'CNPJ') return isValidCnpj(value);
   return false;
 };
+
+export const capitalizarNome = (str) => {
+  if (!str) return '';
+  return str
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+};

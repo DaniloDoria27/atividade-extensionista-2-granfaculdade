@@ -164,9 +164,6 @@ export default function ClientesCadastrados() {
 
       {/* TABELA DE LISTAGEM */}
       <div className='bg-custom-surface p-6 rounded-lg border border-custom-grid shadow-sm'>
-        <h3 className='font-bold text-xl text-custom-main mb-4'>
-          Clientes Atuais
-        </h3>
         <div className='overflow-x-auto border border-custom-grid rounded-md shadow-sm bg-white'>
           <table className='w-full text-left border-collapse min-w-[800px]'>
             <thead>
@@ -232,122 +229,127 @@ export default function ClientesCadastrados() {
       </div>
 
       {/* MODAL: VER DETALHES DO CLIENTE */}
-      {modalDetalhesOpen && clienteDetalhado && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm'>
-          <div className='bg-white rounded-lg shadow-xl border border-custom-grid max-w-2xl w-full overflow-hidden'>
-            <div className='bg-gray-50 px-6 py-4 border-b border-custom-grid flex justify-between items-center'>
-              <h3 className='text-lg font-bold text-custom-main capitalize'>
-                Ficha Técnico: {clienteDetalhado.nome}
-              </h3>
-              <button
-                onClick={() => setModalDetalhesOpen(false)}
-                className='text-gray-400 hover:text-custom-main transition-colors'
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className='p-6 space-y-4 text-base capitalize'>
-              <div className='grid grid-cols-2 gap-4 border-b border-gray-100 pb-3'>
-                <div>
-                  <span className='block text-xs font-bold text-custom-muted uppercase'>
-                    Tipo de Pessoa
-                  </span>
-                  <span className='font-medium text-custom-main'>
-                    {clienteDetalhado.tipoDoc === 'CPF'
-                      ? 'Pessoa Física'
-                      : 'Pessoa Jurídica'}
-                  </span>
-                </div>
-                <div>
-                  <span className='block text-xs font-bold text-custom-muted uppercase'>
-                    Documento Identificador
-                  </span>
-                  <span className='font-mono font-medium text-custom-main normal-case'>
-                    {clienteDetalhado.documentoFormatado || '-'}
-                  </span>
-                </div>
+      {modalDetalhesOpen &&
+        clienteDetalhado &&
+        createPortal(
+          <div className='fixed top-0 left-0 w-screen h-screen z-[999999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm'>
+            <div className='bg-white rounded-lg shadow-xl border border-custom-grid max-w-2xl w-full overflow-hidden'>
+              <div className='bg-gray-50 px-6 py-4 border-b border-custom-grid flex justify-between items-center'>
+                <h3 className='text-lg font-bold text-custom-main capitalize'>
+                  Cliente: {clienteDetalhado.nome}
+                </h3>
+                <button
+                  onClick={() => setModalDetalhesOpen(false)}
+                  className='text-gray-400 hover:text-custom-main transition-colors'
+                >
+                  <X size={20} />
+                </button>
               </div>
-              <div className='grid grid-cols-2 gap-4 border-b border-gray-100 pb-3'>
-                <div>
-                  <span className='block text-xs font-bold text-custom-muted uppercase'>
-                    Telefone Principal
-                  </span>
-                  <span className='font-medium text-custom-main'>
-                    {clienteDetalhado.contato1}
-                  </span>
+              <div className='p-6 space-y-4 text-base capitalize'>
+                <div className='grid grid-cols-2 gap-4 border-b border-gray-100 pb-3'>
+                  <div>
+                    <span className='block text-xs font-bold text-custom-muted uppercase'>
+                      Tipo de Pessoa
+                    </span>
+                    <span className='font-medium text-custom-main'>
+                      {clienteDetalhado.tipoDoc === 'CPF'
+                        ? 'Pessoa Física'
+                        : 'Pessoa Jurídica'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className='block text-xs font-bold text-custom-muted uppercase'>
+                      Documento Identificador
+                    </span>
+                    <span className='font-mono font-medium text-custom-main normal-case'>
+                      {clienteDetalhado.documentoFormatado || '-'}
+                    </span>
+                  </div>
                 </div>
-                <div>
+                <div className='grid grid-cols-2 gap-4 border-b border-gray-100 pb-3'>
+                  <div>
+                    <span className='block text-xs font-bold text-custom-muted uppercase'>
+                      Telefone Principal
+                    </span>
+                    <span className='font-medium text-custom-main'>
+                      {clienteDetalhado.contato1}
+                    </span>
+                  </div>
+                  <div>
+                    <span className='block text-xs font-bold text-custom-muted uppercase'>
+                      Contato Alternativo
+                    </span>
+                    <span className='font-medium text-custom-main'>
+                      {clienteDetalhado.contato2 || (
+                        <span className='text-gray-300 italic'>
+                          Não informado
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <div className='border-b border-gray-100 pb-3'>
                   <span className='block text-xs font-bold text-custom-muted uppercase'>
-                    Contato Alternativo
+                    E-mail Cadastrado
                   </span>
-                  <span className='font-medium text-custom-main'>
-                    {clienteDetalhado.contato2 || (
+                  <span className='font-medium text-custom-main lowercase'>
+                    {clienteDetalhado.email || (
                       <span className='text-gray-300 italic'>
                         Não informado
                       </span>
                     )}
                   </span>
                 </div>
-              </div>
-              <div className='border-b border-gray-100 pb-3'>
-                <span className='block text-xs font-bold text-custom-muted uppercase'>
-                  E-mail Cadastrado
-                </span>
-                <span className='font-medium text-custom-main lowercase'>
-                  {clienteDetalhado.email || (
-                    <span className='text-gray-300 italic'>Não informado</span>
-                  )}
-                </span>
-              </div>
-              <div className='bg-gray-50 p-3 rounded border border-custom-grid space-y-2'>
-                <span className='block text-xs font-bold text-custom-muted uppercase tracking-wider border-b border-gray-200 pb-1'>
-                  Endereço Registrado
-                </span>
-                <div className='grid grid-cols-3 gap-2 text-sm'>
-                  <p className='col-span-2'>
-                    <strong>Logradouro:</strong> {clienteDetalhado.logradouro}
-                  </p>
-                  <p>
-                    <strong>Número:</strong> {clienteDetalhado.numero}
-                  </p>
-                  <p className='col-span-3'>
-                    <strong>Complemento:</strong>{' '}
-                    {clienteDetalhado.complemento || (
-                      <span className='text-gray-400 italic font-normal'>
-                        Sem complemento
-                      </span>
-                    )}
-                  </p>
-                  <p>
-                    <strong>Bairro:</strong> {clienteDetalhado.bairro}
-                  </p>
-                  <p>
-                    <strong>Cidade/UF:</strong>{' '}
-                    {clienteDetalhado.cidade || 'São Luís'} /{' '}
-                    {clienteDetalhado.uf || 'MA'}
-                  </p>
-                  <p className='font-mono'>
-                    <strong>CEP:</strong> {clienteDetalhado.cep || '-'}
-                  </p>
+                <div className='bg-gray-50 p-3 rounded border border-custom-grid space-y-2'>
+                  <span className='block text-xs font-bold text-custom-muted uppercase tracking-wider border-b border-gray-200 pb-1'>
+                    Endereço Registrado
+                  </span>
+                  <div className='grid grid-cols-3 gap-2 text-sm'>
+                    <p className='col-span-2'>
+                      <strong>Logradouro:</strong> {clienteDetalhado.logradouro}
+                    </p>
+                    <p>
+                      <strong>Número:</strong> {clienteDetalhado.numero}
+                    </p>
+                    <p className='col-span-3'>
+                      <strong>Complemento:</strong>{' '}
+                      {clienteDetalhado.complemento || (
+                        <span className='text-gray-400 italic font-normal'>
+                          Sem complemento
+                        </span>
+                      )}
+                    </p>
+                    <p>
+                      <strong>Bairro:</strong> {clienteDetalhado.bairro}
+                    </p>
+                    <p>
+                      <strong>Cidade/UF:</strong>{' '}
+                      {clienteDetalhado.cidade || 'São Luís'} /{' '}
+                      {clienteDetalhado.uf || 'MA'}
+                    </p>
+                    <p className='font-mono'>
+                      <strong>CEP:</strong> {clienteDetalhado.cep || '-'}
+                    </p>
+                  </div>
                 </div>
               </div>
+              <div className='bg-gray-50 px-6 py-3 border-t border-custom-grid flex justify-end'>
+                <button
+                  onClick={() => setModalDetalhesOpen(false)}
+                  className='px-5 py-1.5 btn-primary rounded-md font-semibold text-sm shadow-sm'
+                >
+                  Fechar Detalhes
+                </button>
+              </div>
             </div>
-            <div className='bg-gray-50 px-6 py-3 border-t border-custom-grid flex justify-end'>
-              <button
-                onClick={() => setModalDetalhesOpen(false)}
-                className='px-5 py-1.5 btn-primary rounded-md font-semibold text-sm shadow-sm'
-              >
-                Fechar Detalhes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* MODAL DE EDIÇÃO */}
       {modalEditarOpen &&
         createPortal(
-          <div className='fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm'>
+          <div className='fixed top-0 left-0 w-screen h-screen z-[999999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm'>
             <div className='bg-white rounded-lg shadow-xl border border-custom-grid max-w-4xl w-full overflow-hidden'>
               <div className='bg-gray-50 px-6 py-4 border-b border-custom-grid flex justify-between items-center'>
                 <h3 className='text-lg font-bold text-custom-main'>
@@ -525,7 +527,7 @@ export default function ClientesCadastrados() {
         title='Campos Obrigatórios'
         message='Por favor, preencha o nome do cliente e o contato principal antes de salvar.'
         onConfirm={() => setModalAvisoOpen(false)}
-        confirmText='Entendido'
+        confirmText='Ok'
       />
 
       {/* MODAL DE SUCESSO DE EDIÇÃO */}
@@ -534,7 +536,7 @@ export default function ClientesCadastrados() {
         title='Sucesso!'
         message='Os dados do cliente foram atualizados.'
         onConfirm={() => setModalSucessoOpen(false)}
-        confirmText='Entendido'
+        confirmText='Ok'
       />
 
       {/* MODAL DE SUCESSO AO EXCLUIR */}
@@ -543,7 +545,7 @@ export default function ClientesCadastrados() {
         title='Cliente Excluído!'
         message='O registro do cliente foi removido do sistema com sucesso.'
         onConfirm={() => setModalExcluidoSucessoOpen(false)}
-        confirmText='Entendido'
+        confirmText='Ok'
       />
     </div>
   );

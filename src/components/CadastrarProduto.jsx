@@ -8,20 +8,83 @@ export default function CadastrarProduto() {
   const [descricao, setDescricao] = useState('');
   const [grandeza, setGrandeza] = useState('unid.');
 
-  // Estado para gerenciar os modais de feedback (substitutos dos alerts)
+  // Estado expandido para gerenciar feedback e confirmações de substituição
   const [feedbackModal, setFeedbackModal] = useState({
     isOpen: false,
     title: '',
     message: '',
+    confirmText: 'Ok',
+    onConfirm: () => {},
+    showCancel: false,
+    cancelText: 'Cancelar',
+    onCancel: () => {},
   });
 
-  // Função auxiliar para abrir o modal de aviso ou sucesso
-  const mostrarFeedback = (title, message) => {
+  // Função auxiliar para abrir o modal genérico
+  const mostrarFeedback = (title, message, options = {}) => {
     setFeedbackModal({
       isOpen: true,
       title,
       message,
+      confirmText: options.confirmText || 'Ok',
+      onConfirm:
+        options.onConfirm ||
+        (() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))),
+      showCancel: options.showCancel || false,
+      cancelText: options.cancelText || 'Cancelar',
+      onCancel:
+        options.onCancel ||
+        (() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))),
     });
+  };
+
+  // Função auxiliar para normalizar o texto (remover acentos e colocar em minúsculo)
+  const normalizarTexto = (texto) => {
+    return texto
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''); // Remove marcas de acentuação
+  };
+
+  // Executa o salvamento real do produto (seja novo ou substituição)
+  const salvarNoLocalStorage = (
+    produtosAtuais,
+    produtoParaSalvar,
+    isSubstituicao = false
+  ) => {
+    let listaAtualizada;
+
+    if (isSubstituicao) {
+      // Substitui o produto existente mantendo o ID original ou atualizando os dados na mesma posição
+      listaAtualizada = produtosAtuais.map((prod) =>
+        normalizarTexto(prod.nome) === normalizarTexto(produtoParaSalvar.nome)
+          ? {
+              ...prod,
+              preco: produtoParaSalvar.preco,
+              descricao: produtoParaSalvar.descricao,
+              grandeza: produtoParaSalvar.grandeza,
+            }
+          : prod
+      );
+    } else {
+      // Adiciona como novo produto
+      listaAtualizada = [...produtosAtuais, produtoParaSalvar];
+    }
+
+    localStorage.setItem('mvp_produtos', JSON.stringify(listaAtualizada));
+
+    // Limpa os campos do formulário
+    setNome('');
+    setPreco('');
+    setDescricao('');
+    setGrandeza('unid.');
+
+    // Fecha o modal atual e mostra o sucesso
+    setFeedbackModal((prev) => ({ ...prev, isOpen: false }));
+    setTimeout(() => {
+      mostrarFeedback('Sucesso!', 'Produto salvo com sucesso!');
+    }, 100);
   };
 
   const handleCadastrar = (e) => {
@@ -34,28 +97,43 @@ export default function CadastrarProduto() {
       return;
     }
 
-    // Busca os produtos atuais salvos no localStorage
     const salvos = localStorage.getItem('mvp_produtos');
     const produtosAtuais = salvos ? JSON.parse(salvos) : [];
 
-    const novoProduto = {
+    const nomeNormalizadoNovo = normalizarTexto(nome);
+
+    // Verifica se já existe um produto com o mesmo nome (ignorando caixa e acentos)
+    const produtoExistente = produtosAtuais.find(
+      (prod) => normalizarTexto(prod.nome) === nomeNormalizadoNovo
+    );
+
+    const dadosProduto = {
       id: crypto.randomUUID(),
       nome: nome.trim(),
       preco: parseFloat(preco) || 0,
       descricao: descricao.trim(),
-      grandeza: grandeza, // Guarda a seleção de Grandeza
+      grandeza: grandeza,
     };
 
-    const listaAtualizada = [...produtosAtuais, novoProduto];
-    localStorage.setItem('mvp_produtos', JSON.stringify(listaAtualizada));
-
-    // Limpa os campos do formulário
-    setNome('');
-    setPreco('');
-    setDescricao('');
-    setGrandeza('unid.');
-
-    mostrarFeedback('Sucesso!', 'Produto cadastrado com sucesso!');
+    if (produtoExistente) {
+      // Se já existe, abre o modal perguntando se deseja substituir
+      mostrarFeedback(
+        'Produto Já Cadastrado',
+        `Já existe um produto cadastrado como "${produtoExistente.nome}". Deseja substituir os dados existentes por estes novos?`,
+        {
+          confirmText: 'Sim, substituir',
+          showCancel: true,
+          cancelText: 'Cancelar',
+          onConfirm: () =>
+            salvarNoLocalStorage(produtosAtuais, dadosProduto, true),
+          onCancel: () =>
+            setFeedbackModal((prev) => ({ ...prev, isOpen: false })),
+        }
+      );
+    } else {
+      // Se não existe duplicidade, salva direto
+      salvarNoLocalStorage(produtosAtuais, dadosProduto, false);
+    }
   };
 
   return (
@@ -96,7 +174,6 @@ export default function CadastrarProduto() {
             />
           </div>
 
-          {/* NOVO SELETOR DE GRANDEZA REALOCADO */}
           <div className='md:col-span-2'>
             <label className='block text-sm font-bold text-custom-muted uppercase mb-1.5'>
               Grandeza *
@@ -108,6 +185,9 @@ export default function CadastrarProduto() {
             >
               <option value='unid.'>Unidade (unid.)</option>
               <option value='m²'>Metro Quadrado (m²)</option>
+              <option value='m'>Metro (m)</option>
+              <option value='cm'>Centímetro (cm)</option>
+              <option value='mm'>Milímetro (mm)</option>
             </select>
           </div>
 
@@ -135,13 +215,17 @@ export default function CadastrarProduto() {
         </form>
       </div>
 
-      {/* MODAL DE RETORNO / FEEDBACK (AVISOS E SUCESSO) */}
+      {/* MODAL DE RETORNO / FEEDBACK REAPROVEITADO COM PARÂMETROS DINÂMICOS */}
       <Modal
         isOpen={feedbackModal.isOpen}
         title={feedbackModal.title}
         message={feedbackModal.message}
-        onConfirm={() => setFeedbackModal({ ...feedbackModal, isOpen: false })}
-        confirmText='Entendido'
+        onConfirm={feedbackModal.onConfirm}
+        confirmText={feedbackModal.confirmText}
+        onCancel={feedbackModal.showCancel ? feedbackModal.onCancel : undefined}
+        cancelText={
+          feedbackModal.showCancel ? feedbackModal.cancelText : undefined
+        }
       />
     </div>
   );

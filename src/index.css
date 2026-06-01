@@ -126,3 +126,9 @@ body {
 html {
   scrollbar-gutter: stable;
 }
+
+/* Esconde a scrollbar visualmente mas mantém o scroll funcional */
+html::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}

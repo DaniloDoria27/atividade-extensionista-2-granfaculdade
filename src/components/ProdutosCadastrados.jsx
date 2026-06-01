@@ -320,7 +320,7 @@ export default function ProdutosCadastrados() {
         title='Sucesso!'
         message='O produto foi atualizado com sucesso.'
         onConfirm={() => setModalSucessoOpen(false)}
-        confirmText='Entendido'
+        confirmText='Ok'
       />
 
       {/* MODAL DE SUCESSO AO EXCLUIR */}
@@ -329,7 +329,7 @@ export default function ProdutosCadastrados() {
         title='Produto Excluído!'
         message='O produto foi removido do sistema com sucesso.'
         onConfirm={() => setModalExcluidoSucessoOpen(false)}
-        confirmText='Entendido'
+        confirmText='Ok'
       />
     </div>
   );
