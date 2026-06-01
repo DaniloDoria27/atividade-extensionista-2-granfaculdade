@@ -17,6 +17,10 @@ export default function ProdutosCadastrados() {
   const [editDescricao, setEditDescricao] = useState('');
   const [editGrandeza, setEditGrandeza] = useState('unid.');
 
+  // Estados para MODAIS DE FEEDBACK (Substitutos do alert)
+  const [modalAvisoOpen, setModalAvisoOpen] = useState(false);
+  const [modalSucessoOpen, setModalSucessoOpen] = useState(false);
+
   useEffect(() => {
     const salvos = localStorage.getItem('mvp_produtos');
     if (salvos) {
@@ -41,7 +45,7 @@ export default function ProdutosCadastrados() {
   const handleSalvarEdicao = (e) => {
     e.preventDefault();
     if (!editNome.trim() || !editPreco) {
-      alert('Por favor, preencha o nome e o preço do produto.');
+      setModalAvisoOpen(true);
       return;
     }
 
@@ -60,7 +64,7 @@ export default function ProdutosCadastrados() {
 
     salvarLocalStorage(listaAtualizada);
     setModalEditarOpen(false);
-    alert('Produto atualizado com sucesso!');
+    setModalSucessoOpen(true);
   };
 
   const handleAbrirExcluir = (produto) => {
@@ -78,10 +82,8 @@ export default function ProdutosCadastrados() {
     setProdutoParaExcluir(null);
   };
 
-  // Filtro por pesquisa com remoção de acentos e ordenação alfabética
   const produtosFiltradosEOrdenados = produtos
     .filter((p) => {
-      // Função auxiliar para remover acentos e deixar em minúsculo
       const normalizar = (txt) =>
         txt
           ? txt
@@ -91,7 +93,6 @@ export default function ProdutosCadastrados() {
           : '';
 
       const termo = normalizar(pesquisa);
-
       const nomeNormalizado = normalizar(p.nome);
       const descricaoNormalizada = normalizar(p.descricao);
 
@@ -299,6 +300,25 @@ export default function ProdutosCadastrados() {
         onCancel={() => setModalExcluirOpen(false)}
         confirmText='Sim, excluir'
         cancelText='Não, manter'
+      />
+
+      {/* MODAL DE VALIDAÇÃO (AVISO) */}
+      <Modal
+        isOpen={modalAvisoOpen}
+        title='Campos Obrigatórios'
+        message='Por favor, certifique-se de que o nome e o preço do produto foram informados.'
+        onConfirm={() => setModalAvisoOpen(false)}
+        confirmText='Corrigir'
+      />
+
+      {/* MODAL DE SUCESSO */}
+      <Modal
+        isOpen={modalSucessoOpen}
+        title='Sucesso!'
+        message='O produto foi atualizado com sucesso.'
+        onConfirm={() => setModalSucessoOpen(false)}
+        confirmText='Entendido'
+        cancelText={null}
       />
     </div>
   );

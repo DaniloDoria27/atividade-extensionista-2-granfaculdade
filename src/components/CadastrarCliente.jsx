@@ -30,6 +30,13 @@ export default function CadastrarCliente() {
   const [modalOpen, setModalOpen] = useState(false);
   const [pendingData, setPendingData] = useState(null);
 
+  // Novos estados para gerenciar os modais de feedback (substitutos dos alerts)
+  const [feedbackModal, setFeedbackModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+  });
+
   // Manipulador de mudanças aplicando as máscaras em tempo real
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -55,12 +62,22 @@ export default function CadastrarCliente() {
     setForm(initialForm);
   };
 
+  // Função auxiliar para abrir os modais de aviso ou sucesso
+  const mostrarFeedback = (title, message) => {
+    setFeedbackModal({
+      isOpen: true,
+      title,
+      message,
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
     // Verificador de E-mail
     if (form.email && !isValidEmail(form.email)) {
-      alert(
+      mostrarFeedback(
+        'E-mail Inválido',
         "Por favor, digite um e-mail válido contendo '@' (Exemplo: cliente@email.com)."
       );
       return;
@@ -68,14 +85,18 @@ export default function CadastrarCliente() {
 
     // Validador Matemático de CPF/CNPJ
     if (!form.documento) {
-      alert('Por favor, preencha o campo de documento (CPF ou CNPJ).');
+      mostrarFeedback(
+        'Documento Obrigatório',
+        'Por favor, preencha o campo de documento (CPF ou CNPJ).'
+      );
       return;
     }
 
     const documentoValido = isValidDocument(form.documento, form.tipoDoc);
 
     if (!documentoValido) {
-      alert(
+      mostrarFeedback(
+        'Documento Inválido',
         `O ${form.tipoDoc} digitado é inválido! Por favor, confira os números.`
       );
       return;
@@ -125,7 +146,8 @@ export default function CadastrarCliente() {
     );
     const novaLista = [...listaFiltrada, novoCliente];
     localStorage.setItem('mvp_clientes', JSON.stringify(novaLista));
-    alert('Cliente salvo com sucesso!');
+
+    mostrarFeedback('Sucesso!', 'Cliente cadastrado com sucesso!');
     handleLimpar();
   };
 
@@ -388,7 +410,7 @@ export default function CadastrarCliente() {
             className='flex items-center gap-2 px-6 py-2.5 rounded-md text-base font-bold btn-success transition-colors shadow-sm'
           >
             <Save size={18} />
-            Salvar Cliente
+            Cadastrar Cliente
           </button>
         </div>
       </form>
@@ -405,6 +427,15 @@ export default function CadastrarCliente() {
         }}
         confirmText='Sim, atualizar'
         cancelText='Não, cancelar'
+      />
+
+      {/* MODAL DE RETORNO / FEEDBACK (AVISOS E SUCESSO) */}
+      <Modal
+        isOpen={feedbackModal.isOpen}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        onConfirm={() => setFeedbackModal({ ...feedbackModal, isOpen: false })}
+        confirmText='Entendido'
       />
     </div>
   );

@@ -8,7 +8,7 @@ export default function Modal({
   onConfirm,
   onCancel,
   confirmText = 'Sim',
-  cancelText = 'Não',
+  cancelText, // <--- Removido o padrão "Não" para o controle condicional funcionar
 }) {
   if (!isOpen) return null;
 
@@ -28,19 +28,25 @@ export default function Modal({
         </div>
 
         <div className='mt-6 flex justify-end gap-3'>
-          <button
-            type='button'
-            className='px-4 py-2 rounded-md border border-brand-border text-sm font-medium text-brand-muted hover:bg-gray-100 transition-colors'
-            onClick={onCancel}
-          >
-            {cancelText}
-          </button>
+          {/* TRAVA CONDICIONAL: O botão cinza só aparece se você definir o 'cancelText' */}
+          {cancelText && (
+            <button
+              type='button'
+              className='px-4 py-2 rounded-md border border-brand-border text-sm font-medium text-brand-muted hover:bg-gray-100 transition-colors'
+              onClick={onCancel}
+            >
+              {cancelText}
+            </button>
+          )}
+
           <button
             type='button'
             className='px-4 py-2 rounded-md text-sm font-medium btn-danger transition-colors'
             style={{
               backgroundColor:
-                title.includes('sucesso') || title.includes('Aviso')
+                title.includes('sucesso') ||
+                title.includes('Aviso') ||
+                title.includes('Sucesso!')
                   ? 'var(--primary)'
                   : 'var(--danger)',
             }}

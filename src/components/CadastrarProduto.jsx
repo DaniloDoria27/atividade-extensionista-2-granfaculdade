@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
+import Modal from './Modal';
 
 export default function CadastrarProduto() {
   const [nome, setNome] = useState('');
@@ -7,10 +8,29 @@ export default function CadastrarProduto() {
   const [descricao, setDescricao] = useState('');
   const [grandeza, setGrandeza] = useState('unid.');
 
+  // Estado para gerenciar os modais de feedback (substitutos dos alerts)
+  const [feedbackModal, setFeedbackModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+  });
+
+  // Função auxiliar para abrir o modal de aviso ou sucesso
+  const mostrarFeedback = (title, message) => {
+    setFeedbackModal({
+      isOpen: true,
+      title,
+      message,
+    });
+  };
+
   const handleCadastrar = (e) => {
     e.preventDefault();
     if (!nome.trim() || !preco) {
-      alert('Por favor, preencha o nome e o preço do produto.');
+      mostrarFeedback(
+        'Campos Obrigatórios',
+        'Por favor, preencha o nome e o preço do produto.'
+      );
       return;
     }
 
@@ -34,7 +54,8 @@ export default function CadastrarProduto() {
     setPreco('');
     setDescricao('');
     setGrandeza('unid.');
-    alert('Produto cadastrado com sucesso!');
+
+    mostrarFeedback('Sucesso!', 'Produto cadastrado com sucesso!');
   };
 
   return (
@@ -113,6 +134,15 @@ export default function CadastrarProduto() {
           </div>
         </form>
       </div>
+
+      {/* MODAL DE RETORNO / FEEDBACK (AVISOS E SUCESSO) */}
+      <Modal
+        isOpen={feedbackModal.isOpen}
+        title={feedbackModal.title}
+        message={feedbackModal.message}
+        onConfirm={() => setFeedbackModal({ ...feedbackModal, isOpen: false })}
+        confirmText='Entendido'
+      />
     </div>
   );
 }

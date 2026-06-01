@@ -28,6 +28,10 @@ export default function ClientesCadastrados() {
   const [modalDetalhesOpen, setModalDetalhesOpen] = useState(false);
   const [clienteDetalhado, setClienteDetalhado] = useState(null);
 
+  // Estados para MODAIS DE FEEDBACK (Substitutos do alert)
+  const [modalAvisoOpen, setModalAvisoOpen] = useState(false);
+  const [modalSucessoOpen, setModalSucessoOpen] = useState(false);
+
   useEffect(() => {
     const salvos = localStorage.getItem('mvp_clientes');
     if (salvos) {
@@ -59,7 +63,7 @@ export default function ClientesCadastrados() {
   const handleSalvarEdicao = (e) => {
     e.preventDefault();
     if (!editNome.trim() || !editContato1.trim()) {
-      alert('Por favor, preencha o nome e o contato principal.');
+      setModalAvisoOpen(true);
       return;
     }
 
@@ -85,7 +89,7 @@ export default function ClientesCadastrados() {
 
     salvarLocalStorage(listaAtualizada);
     setModalEditarOpen(false);
-    alert('Cliente atualizado com sucesso!');
+    setModalSucessoOpen(true);
   };
 
   const handleAbrirExcluir = (cliente) => {
@@ -108,10 +112,8 @@ export default function ClientesCadastrados() {
     setModalDetalhesOpen(true);
   };
 
-  // Filtro por pesquisa com remoção de acentos e posterior ordenação alfabética
   const clientesFiltradosEOrdenados = clientes
     .filter((c) => {
-      // Função auxiliar para remover acentos e deixar em minúsculo
       const normalizar = (txt) =>
         txt
           ? txt
@@ -121,7 +123,6 @@ export default function ClientesCadastrados() {
           : '';
 
       const termo = normalizar(pesquisa);
-
       const nomeNormalizado = normalizar(c.nome);
       const documentoNormalizado = normalizar(c.documentoFormatado);
       const emailNormalizado = normalizar(c.email);
@@ -233,7 +234,7 @@ export default function ClientesCadastrados() {
           <div className='bg-white rounded-lg shadow-xl border border-custom-grid max-w-2xl w-full overflow-hidden'>
             <div className='bg-gray-50 px-6 py-4 border-b border-custom-grid flex justify-between items-center'>
               <h3 className='text-lg font-bold text-custom-main capitalize'>
-                Ficha Técnica: {clienteDetalhado.nome}
+                Ficha Técnico: {clienteDetalhado.nome}
               </h3>
               <button
                 onClick={() => setModalDetalhesOpen(false)}
@@ -513,6 +514,25 @@ export default function ClientesCadastrados() {
         onCancel={() => setModalExcluirOpen(false)}
         confirmText='Sim, excluir'
         cancelText='Não, manter'
+      />
+
+      {/* MODAL DE VALIDAÇÃO (AVISO) */}
+      <Modal
+        isOpen={modalAvisoOpen}
+        title='Campos Obrigatórios'
+        message='Por favor, preencha o nome do cliente e o contato principal antes de salvar.'
+        onConfirm={() => setModalAvisoOpen(false)}
+        confirmText='Entendido'
+      />
+
+      {/* MODAL DE SUCESSO */}
+      <Modal
+        isOpen={modalSucessoOpen}
+        title='Sucesso!'
+        message='Os dados do cliente foram atualizados perfeitamente.'
+        onConfirm={() => setModalSucessoOpen(false)}
+        confirmText='Ótimo'
+        cancelText={null}
       />
     </div>
   );
