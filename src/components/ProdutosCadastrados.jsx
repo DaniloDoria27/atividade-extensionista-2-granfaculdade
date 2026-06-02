@@ -131,9 +131,6 @@ export default function ProdutosCadastrados() {
 
       {/* TABELA DE PRODUTOS */}
       <div className='bg-custom-surface p-6 rounded-lg border border-custom-grid shadow-sm'>
-        <h3 className='font-bold text-xl text-custom-main mb-4'>
-          Produtos Atuais
-        </h3>
         <div className='overflow-x-auto border border-custom-grid rounded-md shadow-sm bg-white'>
           <table className='w-full text-left border-collapse min-w-[750px]'>
             <thead>

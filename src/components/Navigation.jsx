@@ -26,16 +26,23 @@ export default function Navigation({ activeTab, setActiveTab }) {
       <div className='max-w-7xl mx-auto px-4'>
         <div className='flex flex-col md:flex-row md:items-center md:justify-between py-3 gap-3'>
           {/* Logo / Título do Sistema */}
-          <div className='flex items-center gap-2'>
-            <div className='flex space-x-9 items-center'>
-              <div className='h-8 w-8 flex items-center justify-center text-brand-primary font-bold text-4xl'>
+          <div className='flex items-center gap-2 select-none'>
+            <div className='flex space-x-12 items-center'>
+              {' '}
+              {/* Aumentei ligeiramente o espaço para acomodar o texto esticado */}
+              <div className='h-8 w-8 flex flex-col items-center justify-center text-brand-primary font-bold text-4xl font-sans tracking-tighter'>
                 RQL
               </div>
-              <span className='font-bold text-lg tracking-tight text-brand-main'>
-                {/* RQL<span className='text-brand-primary'>MVP</span> */}
-                <div>
-                  GERENCIADOR
-                  <div>DE ORÇAMENTOS</div>
+              <span className='font-bold text-base md:text-lg tracking-tight text-brand-main uppercase whitespace-nowrap'>
+                {/* Utilizando 'whitespace-nowrap' o texto nunca vai quebrar em 3 linhas.
+        Em telas menores ele fica em uma linha só 'GERENCIADOR DE ORÇAMENTOS'.
+        Se preferir que quebre estritamente em duas linhas, mantemos a estrutura interna flexível.
+      */}
+                <div className='flex flex-col leading-tight'>
+                  <span>GERENCIADOR</span>
+                  <span className='text-brand-primary text-xs md:text-sm tracking-widest'>
+                    DE ORÇAMENTOS
+                  </span>
                 </div>
               </span>
             </div>

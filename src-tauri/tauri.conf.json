@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "RQL - GERENCIADOR DE ORÇAMENTOS",
-  "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "version": "0.1.1",
+  "identifier": "rql-gerenciador-orcamentos",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -16,7 +16,8 @@
         "width": 800,
         "height": 600,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "maximized": true
       }
     ],
     "security": {
